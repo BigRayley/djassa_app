@@ -1,0 +1,29 @@
+[
+    {
+        "id_user": 1,
+        "nom": "Kouassi",
+        "prenom": "Jean",
+        "telephone": "0700000000",
+        "commune": "Cocody",
+        "metier": "Electricien",
+        "est_verifie": true
+    },
+    {
+        "id_user": 2,
+        "nom": "Bamba",
+        "prenom": "Ali",
+        "telephone": "0500000000",
+        "commune": "Yopougon",
+        "metier": "Plombier",
+        "est_verifie": false
+    },
+    {
+        "id_user": 3,
+        "nom": "Kone",
+        "prenom": "Moussa",
+        "telephone": "0100000000",
+        "commune": "Cocody",
+        "metier": "Electricien",
+        "est_verifie": false
+    }
+]
