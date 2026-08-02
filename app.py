@@ -1,10 +1,10 @@
 import json
 import streamlit as st
 
-st.set_page_config(page_title="DJASSA", page_icon="🇨🇮")
+st.set_page_config(page_title="DJASSA - Bêta", page_icon="🇨🇮", layout="centered")
 
-st.title("CI DJASSA - Application des Artisans")
-st.write("Trouvez les meilleurs prestataires de services près de chez vous en Côte d'Ivoire.")
+st.title("🇨🇮 DJASSA")
+st.write("La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.")
 
 # Chargement des prestataires depuis le fichier JSON
 try:
@@ -13,22 +13,34 @@ try:
 except FileNotFoundError:
     artisans = []
 
-# Menu de navigation simple
-menu = st.sidebar.selectbox("Navigation", ["Rechercher un prestataire", "Enregistrer un établissement"])
+# Menu de navigation
+menu = st.sidebar.selectbox("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement"])
 
-if menu == "Rechercher un prestataire":
-    st.subheader("🔍 Espace de recherche")
+if menu == "🔍 Rechercher un prestataire":
+    st.subheader("Espace de recherche")
     
-    # Affichage du compteur dynamique de la bêta
+    # Compteur dynamique
     st.info(f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
-    # Barre de recherche
-    metier_cherche = st.text_input("Métier ou secteur recherché (ex: Électricien, Plombier, Hôtel Résidence)")
-    commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon)")
+    # Recherche textuelle classique
+    metier_cherche = st.text_input("Métier ou secteur recherché (ex: Plombier, Hôtel Résidence, Maquis)")
+    
+    # Filtres rapides par commune en un clic (Étape 2)
+    st.write("**Ou filtrez rapidement par commune :**")
+    cols_communes = st.columns(4)
+    commune_selectionnee = ""
+    
+    communes_populaires = ["Cocody", "Yopougon", "Marcory", "Plateau"]
+    for i, com in enumerate(communes_populaires):
+        with cols_communes[i]:
+            if st.button(com, use_container_width=True):
+                commune_selectionnee = com
 
-    if st.button("Lancer la recherche"):
+    # Champ texte pour la commune (pré-rempli si un bouton rapide est cliqué)
+    commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon)", value=commune_selectionnee)
+
+    if st.button("Lancer la recherche", type="primary"):
         resultats = []
-        # Filtrage insensible à la casse
         for artisan in artisans:
             metier_match = metier_cherche.lower() in artisan['metier'].lower() if metier_cherche else True
             commune_match = commune_cherche.lower() in artisan['commune'].lower() if commune_cherche else True
@@ -44,17 +56,16 @@ if menu == "Rechercher un prestataire":
                 st.write(f"**Métier / Secteur:** {artisan['metier']}")
                 st.write(f"**Commune:** {artisan['commune']}")
                 
-                # Gestion des boutons de contact
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#4CAF50; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer;">📞 Appeler</button></a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#4CAF50; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer; width:100%;">📞 Appeler</button></a>', unsafe_allow_html=True)
                 with col2:
-                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#25D366; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer;">💬 WhatsApp</button></a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#25D366; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer; width:100%;">💬 WhatsApp</button></a>', unsafe_allow_html=True)
         else:
             st.warning("Aucun prestataire trouvé pour ces critères.")
 
-elif menu == "Enregistrer un établissement":
-    st.subheader("📝 Enregistrer un nouveau prestataire ou établissement")
+elif menu == "📝 Enregistrer un établissement":
+    st.subheader("Enregistrer un nouveau prestataire ou établissement")
     
     with st.form("form_enregistrement"):
         nom = st.text_input("Nom de l'établissement ou de l'artisan")
@@ -62,11 +73,10 @@ elif menu == "Enregistrer un établissement":
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
         telephone = st.text_input("Numéro de téléphone (ex: +2250102030405)")
         
-        submit_button = st.form_submit_button("Enregistrer")
+        submit_button = st.form_submit_button("Enregistrer l'établissement", type="primary")
         
         if submit_button:
             if nom and metier and commune and telephone:
-                # Création des liens automatiques
                 nouveau_prestataire = {
                     "nom": nom,
                     "metier": metier,
@@ -75,7 +85,6 @@ elif menu == "Enregistrer un établissement":
                     "whatsapp_url": f"https://wa.me/{telephone.replace('+', '')}"
                 }
                 
-                # Ajout à la liste et sauvegarde dans data.json
                 artisans.append(nouveau_prestataire)
                 with open("data.json", "w", encoding="utf-8") as f:
                     json.dump(artisans, f, ensure_ascii=False, indent=2)
