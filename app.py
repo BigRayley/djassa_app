@@ -25,7 +25,7 @@ if menu == "🔍 Rechercher un prestataire":
     # Recherche textuelle classique
     metier_cherche = st.text_input("Métier ou secteur recherché (ex: Plombier, Hôtel Résidence, Maquis)")
     
-    # Filtres rapides par commune en un clic (Étape 2)
+    # Filtres rapides par commune en un clic
     st.write("**Ou filtrez rapidement par commune :**")
     cols_communes = st.columns(4)
     commune_selectionnee = ""
@@ -63,6 +63,17 @@ if menu == "🔍 Rechercher un prestataire":
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#25D366; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer; width:100%;">💬 WhatsApp</button></a>', unsafe_allow_html=True)
         else:
             st.warning("Aucun prestataire trouvé pour ces critères.")
+            
+    # Section À la une / Récemment ajoutés (Étape 3)
+    st.markdown("---")
+    st.subheader("🌟 Récemment ajoutés sur la plateforme")
+    if artisans:
+        # On prend les 3 derniers de la liste
+        derniers = artisans[-3:]
+        for art in reversed(derniers):
+            st.markdown(f"- **{art['nom']}** ({art['metier']}) à *{art['commune']}*")
+    else:
+        st.write("Aucun établissement pour le moment.")
 
 elif menu == "📝 Enregistrer un établissement":
     st.subheader("Enregistrer un nouveau prestataire ou établissement")
@@ -89,6 +100,6 @@ elif menu == "📝 Enregistrer un établissement":
                 with open("data.json", "w", encoding="utf-8") as f:
                     json.dump(artisans, f, ensure_ascii=False, indent=2)
                 
-                st.success("🎉 Établissement enregistré avec succès ! Il est désormais visible dans la recherche.")
+                st.success("🎉 Établissement enregistré avec succès ! Il apparaît désormais dans les ajouts récents.")
             else:
                 st.error("Veuillez remplir tous les champs du formulaire.")
