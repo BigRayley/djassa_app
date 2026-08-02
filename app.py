@@ -20,9 +20,12 @@ commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon)")
 if st.button("Lancer la recherche"):
     resultats = []
     for artisan in artisans:
-        # Filtrage simple
-        if (metier_cherche.lower() in artisan["metier"].lower() or not metier_cherche) and \
-           (commune_cherche.lower() in artisan["commune"].lower() or not commune_cherche):
+# Filtrage insensible à la casse
+    for artisan in artisans:
+        metier_match = metier_cherche.lower() in artisan['metier'].lower() if metier_cherche else True
+        commune_match = commune_cherche.lower() in artisan['commune'].lower() if commune_cherche else True
+        
+        if metier_match and commune_match:
             resultats.append(artisan)
             
     if resultats:
