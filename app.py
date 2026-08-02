@@ -29,7 +29,7 @@ if st.button("Lancer la recherche"):
         st.success(f"{len(resultats)} prestataire(s) trouvé(s) !")
         for artisan in resultats:
             st.markdown(f"---")
-            st.subheader(f"{artisan['prenom']} {artisan['nom']}")
+            st.subheader(f"{artisan['nom']}")
             st.write(f"**Métier :** {artisan['metier']}")
             st.write(f"**Commune :** {artisan['commune']}")
             
