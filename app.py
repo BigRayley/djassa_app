@@ -19,6 +19,9 @@ menu = st.sidebar.selectbox("Navigation", ["Rechercher un prestataire", "Enregis
 if menu == "Rechercher un prestataire":
     st.subheader("🔍 Espace de recherche")
     
+    # Affichage du compteur dynamique de la bêta
+    st.info(f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
+    
     # Barre de recherche
     metier_cherche = st.text_input("Métier ou secteur recherché (ex: Électricien, Plombier, Hôtel Résidence)")
     commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon)")
@@ -77,6 +80,6 @@ elif menu == "Enregistrer un établissement":
                 with open("data.json", "w", encoding="utf-8") as f:
                     json.dump(artisans, f, ensure_ascii=False, indent=2)
                 
-                st.success("🎉 Établissement enregistré avec succès !")
+                st.success("🎉 Établissement enregistré avec succès ! Il est désormais visible dans la recherche.")
             else:
                 st.error("Veuillez remplir tous les champs du formulaire.")
