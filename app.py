@@ -8,7 +8,7 @@ st.write("Trouvez les meilleurs prestataires de services près de chez vous en C
 
 # Chargement des artisans depuis le fichier JSON
 try:
-    with open("artisans.json", "r", encoding="utf-8") as f:
+    with open("data.json", "r", encoding="utf-8") as f:
         artisans = json.load(f)
 except FileNotFoundError:
     artisans = []

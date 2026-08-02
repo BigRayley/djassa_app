@@ -1,0 +1,37 @@
+ [
+  {
+    "nom": "Ali Bamba",
+    "metier": "Plombier",
+    "commune": "Yopougon",
+    "appel_url": "tel:+2250102030405",
+    "whatsapp_url": "https://wa.me/2250102030405"
+  },
+  {
+    "nom": "Hôtel Ivoire Palace",
+    "metier": "Hôtel Résidence",
+    "commune": "Cocody",
+    "appel_url": "tel:+2250708091011",
+    "whatsapp_url": "https://wa.me/2250708091011"
+  },
+  {
+    "nom": "Maquis Le Dinah",
+    "metier": "Maquis Bar",
+    "commune": "Yopougon",
+    "appel_url": "tel:+2250504030201",
+    "whatsapp_url": "https://wa.me/2250504030201"
+  },
+  {
+    "nom": "Supermarché Bon Prix",
+    "metier": "Supermarché",
+    "commune": "Marcory",
+    "appel_url": "tel:+2250302010405",
+    "whatsapp_url": "https://wa.me/2250302010405"
+  },
+  {
+    "nom": "La Gourmandise",
+    "metier": "Boulangerie Pâtisserie",
+    "commune": "Plateau",
+    "appel_url": "tel:+2250203040506",
+    "whatsapp_url": "https://wa.me/2250203040506"
+  }
+]
