@@ -51,7 +51,6 @@ if menu == "🔍 Rechercher un prestataire":
         if resultats:
             st.success(f"{len(resultats)} prestataire(s) trouvé(s) !")
             for artisan in resultats:
-                # Design de carte moderne et stylisé (UI/UX)
                 with st.container():
                     st.markdown(
                         f"""
@@ -94,19 +93,28 @@ elif menu == "📝 Enregistrer un établissement":
         submit_button = st.form_submit_button("Enregistrer l'établissement", type="primary")
         
         if submit_button:
-            if nom and metier and commune and telephone:
+            # Nettoyage des espaces superflus
+            nom = nom.strip()
+            metier = metier.strip()
+            commune = commune.strip()
+            telephone = telephone.strip()
+            
+            # Validation stricte
+            if not nom or not metier or not commune or not telephone:
+                st.error("⚠️ Tous les champs du formulaire doivent être remplis.")
+            elif len(telephone) < 8:
+                st.error("⚠️ Le numéro de téléphone est trop court pour être valide.")
+            else:
                 nouveau_prestataire = {
                     "nom": nom,
                     "metier": metier,
                     "commune": commune,
                     "appel_url": f"tel:{telephone}",
-                    "whatsapp_url": f"https://wa.me/{telephone.replace('+', '')}"
+                    "whatsapp_url": f"https://wa.me/{telephone.replace('+', '').replace(' ', '')}"
                 }
                 
                 artisans.append(nouveau_prestataire)
                 with open("data.json", "w", encoding="utf-8") as f:
                     json.dump(artisans, f, ensure_ascii=False, indent=2)
                 
-                st.success("🎉 Établissement enregistré avec succès ! Il apparaît désormais dans les ajouts récents.")
-            else:
-                st.error("Veuillez remplir tous les champs du formulaire.")
+                st.success("🎉 Établissement enregistré avec succès et validé !")
