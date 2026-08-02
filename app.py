@@ -1,4 +1,5 @@
 import json
+import urllib.parse
 import streamlit as st
 
 st.set_page_config(page_title="DJASSA - Bêta", page_icon="🇨🇮", layout="centered")
@@ -13,7 +14,7 @@ try:
 except FileNotFoundError:
     artisans = []
 
-# Menu de navigation (ajout de l'espace admin)
+# Menu de navigation
 menu = st.sidebar.selectbox("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement", "⚙️ Administration"])
 
 if menu == "🔍 Rechercher un prestataire":
@@ -67,6 +68,10 @@ if menu == "🔍 Rechercher un prestataire":
                     st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#4CAF50; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 Appeler</button></a>', unsafe_allow_html=True)
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#25D366; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">💬 WhatsApp</button></a>', unsafe_allow_html=True)
+                
+                # Bouton de partage individuel du prestataire sur WhatsApp
+                texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
+                st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#128C7E; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
         else:
             st.warning("Aucun prestataire trouvé pour ces critères.")
@@ -121,7 +126,6 @@ elif menu == "⚙️ Administration":
     st.subheader("🔐 Espace Administrateur")
     st.write("Cet espace est réservé à la gestion des prestataires.")
     
-    # Mot de passe simple (tu pourras le modifier ici : ex: "djassa2026")
     mot_de_passe = st.text_input("Code secret administrateur", type="password")
     
     if mot_de_passe == "djassa2026":
@@ -135,12 +139,10 @@ elif menu == "⚙️ Administration":
             for index, artisan in enumerate(artisans):
                 col_info, col_btn = st.columns([3, 1])
                 with col_info:
-                    st.write(f"**{artisan['nom']}** - {artisan['metier']} ({artisan['commune'])})")
+                    st.write(f"**{artisan['nom']}** - {artisan['metier']} ({artisan['commune']})")
                 with col_btn:
                     if st.button("🗑️ Supprimer", key=f"suppr_{index}"):
-                        # Suppression de l'élément de la liste
                         artisans.pop(index)
-                        # Sauvegarde du fichier JSON mis à jour
                         with open("data.json", "w", encoding="utf-8") as f:
                             json.dump(artisans, f, ensure_ascii=False, indent=2)
                         st.success(f"'{artisan['nom']}' a été supprimé !")
