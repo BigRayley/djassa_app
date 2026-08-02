@@ -18,13 +18,9 @@ metier_cherche = st.text_input("Métier recherché (ex: Électricien, Plombier)"
 commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon)")
 
 if st.button("Lancer la recherche"):
-# Filtrage insensible à la casse
+
+resultats = []
     for artisan in artisans:
-        metier_match = metier_cherche.lower() in artisan['metier'].lower() if metier_cherche else True
-        commune_match = commune_cherche.lower() in artisan['commune'].lower() if commune_cherche else True
-        
-        if metier_match and commune_match:
-            resultats.append(artisan)
         metier_match = metier_cherche.lower() in artisan['metier'].lower() if metier_cherche else True
         commune_match = commune_cherche.lower() in artisan['commune'].lower() if commune_cherche else True
         
