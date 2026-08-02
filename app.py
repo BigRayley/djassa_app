@@ -14,8 +14,18 @@ try:
 except FileNotFoundError:
     artisans = []
 
+# --- SECURITE ADMIN CACHEE PAR URL ---
+# On vérifie si l'URL contient ton paramètre secret (ex: tonapp.streamlit.app/?admin=moncode2026)
+params = st.query_params
+est_admin = params.get("admin") == "djassa_admin_secret_2026"
+
+# Liste des menus dynamiques (l'admin n'apparaît que pour toi via l'URL secrète)
+options_menu = ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement"]
+if est_admin:
+    options_menu.append("⚙️ Administration")
+
 # Menu de navigation
-menu = st.sidebar.selectbox("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement", "⚙️ Administration"])
+menu = st.sidebar.selectbox("Navigation", options_menu)
 
 if menu == "🔍 Rechercher un prestataire":
     st.subheader("Espace de recherche")
@@ -122,32 +132,25 @@ elif menu == "📝 Enregistrer un établissement":
                 
                 st.success("🎉 Établissement enregistré avec succès et validé !")
 
-elif menu == "⚙️ Administration":
-    st.subheader("🔐 Espace Administrateur")
-    st.write("Cet espace est réservé à la gestion des prestataires.")
+elif menu == "⚙️ Administration" and est_admin:
+    st.subheader("🔐 Espace Administrateur Privé")
+    st.success("Accès administrateur reconnu via l'URL sécurisée !")
+    st.write(f"Nombre total d'établissements : **{len(artisans)}**")
     
-    mot_de_passe = st.text_input("Code secret administrateur", type="password")
-    
-    if mot_de_passe == "djassa2026":
-        st.success("Accès autorisé !")
-        st.write(f"Nombre total d'établissements : **{len(artisans)}**")
+    if artisans:
+        st.markdown("---")
+        st.subheader("Liste des prestataires à gérer :")
         
-        if artisans:
-            st.markdown("---")
-            st.subheader("Liste des prestataires à gérer :")
-            
-            for index, artisan in enumerate(artisans):
-                col_info, col_btn = st.columns([3, 1])
-                with col_info:
-                    st.write(f"**{artisan['nom']}** - {artisan['metier']} ({artisan['commune']})")
-                with col_btn:
-                    if st.button("🗑️ Supprimer", key=f"suppr_{index}"):
-                        artisans.pop(index)
-                        with open("data.json", "w", encoding="utf-8") as f:
-                            json.dump(artisans, f, ensure_ascii=False, indent=2)
-                        st.success(f"'{artisan['nom']}' a été supprimé !")
-                        st.rerun()
-        else:
-            st.info("Aucun prestataire à afficher.")
-    elif mot_de_passe:
-        st.error("Code secret incorrect.")
+        for index, artisan in enumerate(artisans):
+            col_info, col_btn = st.columns([3, 1])
+            with col_info:
+                st.write(f"**{artisan['nom']}** - {artisan['metier']} ({artisan['commune']})")
+            with col_btn:
+                if st.button("🗑️ Supprimer", key=f"suppr_{index}"):
+                    artisans.pop(index)
+                    with open("data.json", "w", encoding="utf-8") as f:
+                        json.dump(artisans, f, ensure_ascii=False, indent=2)
+                    st.success(f"'{artisan['nom']}' a été supprimé !")
+                    st.rerun()
+    else:
+        st.info("Aucun prestataire à afficher.")
