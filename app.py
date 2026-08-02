@@ -51,24 +51,31 @@ if menu == "🔍 Rechercher un prestataire":
         if resultats:
             st.success(f"{len(resultats)} prestataire(s) trouvé(s) !")
             for artisan in resultats:
-                st.markdown("---")
-                st.subheader(f"{artisan['nom']}")
-                st.write(f"**Métier / Secteur:** {artisan['metier']}")
-                st.write(f"**Commune:** {artisan['commune']}")
+                # Design de carte moderne et stylisé (UI/UX)
+                with st.container():
+                    st.markdown(
+                        f"""
+                        <div style="padding: 20px; border-radius: 10px; border: 1px solid #e0e0e0; margin-bottom: 15px; background-color: #1e1e1e;">
+                            <h3 style="margin: 0; color: #ffffff;">{artisan['nom']}</h3>
+                            <p style="margin: 5px 0; color: #b0b0b0;"><strong>Métier:</strong> {artisan['metier']} | <strong>Commune:</strong> {artisan['commune']}</p>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#4CAF50; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer; width:100%;">📞 Appeler</button></a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#4CAF50; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 Appeler</button></a>', unsafe_allow_html=True)
                 with col2:
-                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#25D366; color:white; padding:8px 16px; border:none; border-radius:4px; cursor:pointer; width:100%;">💬 WhatsApp</button></a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#25D366; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">💬 WhatsApp</button></a>', unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
         else:
             st.warning("Aucun prestataire trouvé pour ces critères.")
             
-    # Section À la une / Récemment ajoutés (Étape 3)
+    # Section À la une / Récemment ajoutés
     st.markdown("---")
     st.subheader("🌟 Récemment ajoutés sur la plateforme")
     if artisans:
-        # On prend les 3 derniers de la liste
         derniers = artisans[-3:]
         for art in reversed(derniers):
             st.markdown(f"- **{art['nom']}** ({art['metier']}) à *{art['commune']}*")
