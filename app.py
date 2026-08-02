@@ -13,8 +13,8 @@ try:
 except FileNotFoundError:
     artisans = []
 
-# Menu de navigation
-menu = st.sidebar.selectbox("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement"])
+# Menu de navigation (ajout de l'espace admin)
+menu = st.sidebar.selectbox("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement", "⚙️ Administration"])
 
 if menu == "🔍 Rechercher un prestataire":
     st.subheader("Espace de recherche")
@@ -93,13 +93,11 @@ elif menu == "📝 Enregistrer un établissement":
         submit_button = st.form_submit_button("Enregistrer l'établissement", type="primary")
         
         if submit_button:
-            # Nettoyage des espaces superflus
             nom = nom.strip()
             metier = metier.strip()
             commune = commune.strip()
             telephone = telephone.strip()
             
-            # Validation stricte
             if not nom or not metier or not commune or not telephone:
                 st.error("⚠️ Tous les champs du formulaire doivent être remplis.")
             elif len(telephone) < 8:
@@ -118,3 +116,36 @@ elif menu == "📝 Enregistrer un établissement":
                     json.dump(artisans, f, ensure_ascii=False, indent=2)
                 
                 st.success("🎉 Établissement enregistré avec succès et validé !")
+
+elif menu == "⚙️ Administration":
+    st.subheader("🔐 Espace Administrateur")
+    st.write("Cet espace est réservé à la gestion des prestataires.")
+    
+    # Mot de passe simple (tu pourras le modifier ici : ex: "djassa2026")
+    mot_de_passe = st.text_input("Code secret administrateur", type="password")
+    
+    if mot_de_passe == "djassa2026":
+        st.success("Accès autorisé !")
+        st.write(f"Nombre total d'établissements : **{len(artisans)}**")
+        
+        if artisans:
+            st.markdown("---")
+            st.subheader("Liste des prestataires à gérer :")
+            
+            for index, artisan in enumerate(artisans):
+                col_info, col_btn = st.columns([3, 1])
+                with col_info:
+                    st.write(f"**{artisan['nom']}** - {artisan['metier']} ({artisan['commune'])})")
+                with col_btn:
+                    if st.button("🗑️ Supprimer", key=f"suppr_{index}"):
+                        # Suppression de l'élément de la liste
+                        artisans.pop(index)
+                        # Sauvegarde du fichier JSON mis à jour
+                        with open("data.json", "w", encoding="utf-8") as f:
+                            json.dump(artisans, f, ensure_ascii=False, indent=2)
+                        st.success(f"'{artisan['nom']}' a été supprimé !")
+                        st.rerun()
+        else:
+            st.info("Aucun prestataire à afficher.")
+    elif mot_de_passe:
+        st.error("Code secret incorrect.")
