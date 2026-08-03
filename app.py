@@ -31,12 +31,6 @@ if choix_menu == "🔍 Rechercher un prestataire":
     
     st.info(f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
-    # --- NOUVEAU : Recherche directe par nom de service / établissement ---
-    recherche_nom = st.text_input("🔍 Rechercher directement un nom d'établissement ou de service (ex: Chez Paul)", placeholder="Ex: Chez Paul, Maquis...")
-
-    st.markdown("---")
-    st.write("Ou utilisez les filtres par secteur :")
-    
     # Extraction et séparation intelligente des secteurs/métiers uniques
     metiers_bruts = set()
     for artisan in artisans:
@@ -48,39 +42,35 @@ if choix_menu == "🔍 Rechercher un prestataire":
 
     metiers_disponibles = sorted(list(metiers_bruts))
     
-    metier_selectionne = ""
+    # Formulaire de recherche globale (Appuyer sur Entrée dans n'importe quel champ lance la recherche)
+    with st.form("form_recherche"):
+        recherche_nom = st.text_input("🔍 Rechercher directement un nom d'établissement ou de service (ex: Chez Paul)", placeholder="Ex: Chez Paul, Maquis...")
+        
+        metier_cherche = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
+        commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon, Marcory, Plateau)")
+        
+        # Bouton de validation (qui se déclenche aussi par la touche Entrée)
+        lancer_recherche = st.form_submit_button("Lancer la recherche", type="primary")
+
+    # Affichage des suggestions de secteurs cliquables en dehors du formulaire pour garder l'interactivité instantanée
     if metiers_disponibles:
+        st.write("💡 **Suggestions par secteur :**")
         cols_metiers = st.columns(min(len(metiers_disponibles), 4))
         for i, met in enumerate(metiers_disponibles[:4]):
             with cols_metiers[i]:
                 if st.button(met, use_container_width=True, key=f"btn_met_{i}"):
-                    metier_selectionne = met
+                    # On pré-remplit et relance (astuce pour simuler le clic)
+                    metier_cherche = met
+                    lancer_recherche = True
 
-    metier_cherche = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)", value=metier_selectionne)
-    
-    st.write("Ou filtrez par commune :")
-    cols_communes = st.columns(4)
-    commune_selectionnee = ""
-    
-    communes_populaires = ["Cocody", "Yopougon", "Marcory", "Plateau"]
-    for i, com in enumerate(communes_populaires):
-        with cols_communes[i]:
-            if st.button(com, use_container_width=True, key=f"btn_com_{i}"):
-                commune_selectionnee = com
-
-    commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon)", value=commune_selectionnee)
-
-    if st.button("Lancer la recherche", type="primary"):
+    # Traitement de la recherche (activé par le bouton ou la touche Entrée)
+    if lancer_recherche:
         resultats = []
         for artisan in artisans:
-            # Si l'utilisateur tape un nom spécifique, on filtre en priorité sur le nom
             nom_match = recherche_nom.lower() in artisan['nom'].lower() if recherche_nom else True
-            
-            # Sinon on regarde les critères classiques métier et commune
             metier_match = metier_cherche.lower() in artisan['metier'].lower() if metier_cherche else True
             commune_match = commune_cherche.lower() in artisan['commune'].lower() if commune_cherche else True
             
-            # Si une recherche par nom est active, elle prime, sinon on combine métier et commune
             if recherche_nom:
                 if nom_match:
                     resultats.append(artisan)
@@ -89,7 +79,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                     resultats.append(artisan)
 
         if resultats:
-            st.success(f"{len(resultats)} prestataire(s) ou établissement(s) trouvé(s) !")
+            st.success(f"🎉 {len(resultats)} prestataire(s) ou établissement(s) trouvé(s) !")
             for artisan in resultats:
                 badge = artisan.get('badge', '⭐ Professionnel')
                 description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
