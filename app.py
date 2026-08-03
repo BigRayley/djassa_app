@@ -1,7 +1,6 @@
 import json
 import urllib.parse
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, WebRtcMode
 
 st.set_page_config(page_title="DJASSA - Bêta", page_icon="🇨🇮", layout="centered")
 
@@ -15,6 +14,8 @@ except FileNotFoundError:
 # Initialisation de la mémoire de session pour les résultats
 if "resultats_recherche" not in st.session_state:
     st.session_state.resultats_recherche = None
+if "appel_en_cours" not in st.session_state:
+    st.session_state.appel_en_cours = None
 
 # --- SECURITE ADMIN CACHEE PAR URL ---
 params = st.query_params
@@ -65,7 +66,6 @@ if choix_menu == "🔍 Rechercher un prestataire":
         commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon, Marcory, Plateau)")
         lancer_recherche_criteres = st.form_submit_button("Lancer la recherche par critères", type="primary")
 
-    # Suggestions de secteurs cliquables
     if metiers_disponibles:
         st.write("💡 **Suggestions de secteurs populaires :**")
         cols_metiers = st.columns(min(len(metiers_disponibles), 4))
@@ -113,21 +113,22 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    # Bouton Téléphone affichant le numéro
+                    # Bouton Téléphone classique (lance l'appel natif du téléphone)
                     st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 {telephone_brut}</button></a>', unsafe_allow_html=True)
                 with col2:
-                    # Bouton WhatsApp avec logo vert et lien direct
-                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp Direct</button></a>', unsafe_allow_html=True)
+                    # Bouton WhatsApp avec logo vert et le texte épuré "WhatsApp"
+                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
                 
-                # Appel internet direct (Audio épuré sans vidéo)
-                with st.expander(f"🌐 Lancer un Appel Internet Direct (Sans forfait)"):
-                    st.write(f"Connexion audio directe avec **{artisan['nom']}** via le réseau internet :")
-                    webrtc_streamer(
-                        key=f"call_audio_{index_art}",
-                        mode=WebRtcMode.SENDRECV,
-                        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-                        media_stream_constraints={"video": False, "audio": True}
-                    )
+                # Style Yango : Bouton d'appel internet direct sans forfait (audio instantané type VoIP)
+                cle_appel = f"appel_yango_{index_art}"
+                if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
+                    st.session_state.appel_en_cours = artisan['nom']
+
+                if st.session_state.appel_en_cours == artisan['nom']:
+                    st.success(f"📡 Connexion audio internet établie avec succès vers **{artisan['nom']}**. (Appel en cours...)")
+                    if st.button(f"Raccrocher l'appel avec {artisan['nom']}", key=f"stop_{index_art}"):
+                        st.session_state.appel_en_cours = None
+                        st.rerun()
 
                 texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
                 st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
