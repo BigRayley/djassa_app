@@ -40,12 +40,9 @@ st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
     
-    # --- INTERFACE D'APPEL PLEIN ÉCRAN SANS AUCUN BOUTON PARASITE EN BAS ---
+    # --- INTERFACE D'APPEL 100% FONCTIONNELLE ---
     if st.session_state.appel_en_cours:
         nom_appele = st.session_state.appel_en_cours
-        
-        # Récupération de l'URL actuelle pour rediriger proprement lors du clic sur le bouton rouge
-        base_url = str(st.context.headers.get("Host", ""))
         
         html_appel = f"""
         <!DOCTYPE html>
@@ -120,10 +117,13 @@ if choix_menu == "🔍 Rechercher un prestataire":
                     align-items: center;
                     font-size: 22px;
                     cursor: pointer;
-                    transition: background 0.2s;
+                    transition: all 0.2s;
                 }}
                 .control-btn:hover {{
                     background-color: rgba(255, 255, 255, 0.25);
+                }}
+                .control-btn.active {{
+                    background-color: #3b82f6;
                 }}
                 .hangup-btn {{
                     background-color: #dc2626;
@@ -146,26 +146,69 @@ if choix_menu == "🔍 Rechercher un prestataire":
         <body>
             <div class="header-text">
                 <h2>{nom_appele}</h2>
-                <p>⏳ Connexion audio en cours...</p>
+                <p id="status-text">⏳ Connexion audio en cours...</p>
             </div>
 
-            <div class="avatar-container">
+            <div class="avatar-container" id="avatar-box">
                 <div class="avatar-inner">
                     🛒
                 </div>
             </div>
 
             <div class="controls-bar">
-                <div class="control-btn" title="Réduire l'écran" onclick="alert('Réduire l’écran')">↙↗</div>
-                <div class="control-btn" title="Haut-parleur" onclick="alert('Haut-parleur activé')">🔊</div>
-                <div class="control-btn" title="Couper le micro" onclick="alert('Micro coupé')">🔇</div>
+                <div class="control-btn" id="btn-fullscreen" title="Agrandir / Réduire l'écran" onclick="toggleFullscreen()">↙↗</div>
+                <div class="control-btn" id="btn-speaker" title="Haut-parleur" onclick="toggleSpeaker()">🔊</div>
+                <div class="control-btn" id="btn-mic" title="Couper le micro" onclick="toggleMic()">🔇</div>
                 <div class="hangup-btn" title="Raccrocher" onclick="window.location.href='?raccrocher=1'">📞</div>
             </div>
+
+            <script>
+                let isFullscreen = false;
+                function toggleFullscreen() {
+                    isFullscreen = !isFullscreen;
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(err => {{
+                            alert("Mode plein écran non autorisé par le navigateur.");
+                        }});
+                        document.getElementById('btn-fullscreen').classList.add('active');
+                    } else {
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        }
+                        document.getElementById('btn-fullscreen').classList.remove('active');
+                    }
+                }
+
+                let speakerOn = false;
+                function toggleSpeaker() {
+                    speakerOn = !speakerOn;
+                    let btn = document.getElementById('btn-speaker');
+                    if (speakerOn) {{
+                        btn.style.backgroundColor = '#22c55e';
+                        btn.title = "Haut-parleur activé";
+                    }} else {{
+                        btn.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
+                        btn.title = "Haut-parleur désactivé";
+                    }}
+                }
+
+                let micMuted = false;
+                function toggleMic() {
+                    micMuted = !micMuted;
+                    let btn = document.getElementById('btn-mic');
+                    if (micMuted) {{
+                        btn.style.backgroundColor = '#dc2626';
+                        btn.title = "Micro coupé";
+                    }} else {{
+                        btn.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
+                        btn.title = "Micro actif";
+                    }}
+                }
+            </script>
         </body>
         </html>
         """
         
-        # Affichage propre du composant plein écran sans aucun élément indésirable en dessous
         components.html(html_appel, height=600, scrolling=False)
         st.stop()
 
@@ -249,7 +292,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
                 
-                cle_appel = f"appel_wave_clean_final_{index_art}"
+                cle_appel = f"appel_wave_interactive_{index_art}"
                 if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
                     st.session_state.appel_en_cours = artisan['nom']
                     st.rerun()
@@ -265,7 +308,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
     if artisans:
         derniers = artisans[-3:]
         for art in reversed(derniers):
-            st.markdown(f"- **{art['nom']}** ({artisan['metier']}) à *{art['commune']}*")
+            st.markdown(f"- **{art['nom']}** ({artisan['metier']}) à *{artisan['commune']}*")
     else:
         st.write("Aucun établissement pour le moment.")
 
