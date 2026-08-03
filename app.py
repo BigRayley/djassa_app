@@ -12,6 +12,12 @@ try:
 except FileNotFoundError:
     artisans = []
 
+# Initialisation de la mémoire de session pour les résultats
+if "resultats_recherche" not in st.session_state:
+    st.session_state.resultats_recherche = None
+if "type_recherche" not in st.session_state:
+    st.session_state.type_recherche = ""
+
 # --- SECURITE ADMIN CACHEE PAR URL ---
 params = st.query_params
 est_admin = params.get("admin") == "djassa_admin_secret_2026"
@@ -39,46 +45,8 @@ if choix_menu == "🔍 Rechercher un prestataire":
         lancer_recherche_nom = st.form_submit_button("Rechercher par nom", type="primary")
 
     if lancer_recherche_nom and recherche_nom.strip():
-        resultats_nom = [art for art in artisans if recherche_nom.strip().lower() in art['nom'].lower()]
-        
-        if resultats_nom:
-            st.success(f"🎉 {len(resultats_nom)} établissement(s) trouvé(s) pour '{recherche_nom}' :")
-            for index_art, artisan in enumerate(resultats_nom):
-                badge = artisan.get('badge', '⭐ Professionnel')
-                description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
-                
-                with st.container():
-                    st.markdown(
-                        f"""
-                        <div style="padding: 20px; border-radius: 10px; border: 1px solid #333333; margin-bottom: 10px; background-color: #1e1e1e;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <h3 style="margin: 0; color: #3b82f6;">{artisan['nom']}</h3>
-                                <span style="background-color: #d97706; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">{badge}</span>
-                            </div>
-                            <p style="margin: 8px 0 5px 0; color: #e5e7eb;"><strong>{artisan['metier']}</strong> - 📍 {artisan['commune']}</p>
-                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 14px;">{description}</p>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                
-                # Options de contact direct sur le profil
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 Tel Classique</button></a>', unsafe_allow_html=True)
-                with col2:
-                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟩 WhatsApp Direct</button></a>', unsafe_allow_html=True)
-                
-                # Intégration de l'appel internet direct WebRTC dans le profil
-                with st.expander(f"🌐 Appel Internet Direct (Sans forfait) avec {artisan['nom']}"):
-                    st.write(f"Établissez une connexion audio/vidéo sécurisée via internet avec **{artisan['nom']}** :")
-                    webrtc_streamer(key=f"call_nom_{index_art}", mode=WebRtcMode.SENDRECV)
-
-                texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
-                st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
-                st.markdown("<br>", unsafe_allow_html=True)
-        else:
-            st.warning(f"Aucun établissement ne porte le nom '{recherche_nom}'.")
+        st.session_state.resultats_recherche = [art for art in artisans if recherche_nom.strip().lower() in art['nom'].lower()]
+        st.session_state.type_recherche = f"nom: {recherche_nom}"
 
     st.markdown("---")
     
@@ -100,15 +68,6 @@ if choix_menu == "🔍 Rechercher un prestataire":
         commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon, Marcory, Plateau)")
         lancer_recherche_criteres = st.form_submit_button("Lancer la recherche par critères", type="primary")
 
-    if metiers_disponibles:
-        st.write("💡 **Suggestions par secteur :**")
-        cols_metiers = st.columns(min(len(metiers_disponibles), 4))
-        for i, met in enumerate(metiers_disponibles[:4]):
-            with cols_metiers[i]:
-                if st.button(met, use_container_width=True, key=f"btn_met_{i}"):
-                    metier_cherche = met
-                    lancer_recherche_criteres = True
-
     if lancer_recherche_criteres:
         resultats_criteres = []
         for artisan in artisans:
@@ -117,10 +76,16 @@ if choix_menu == "🔍 Rechercher un prestataire":
             
             if metier_match and commune_match:
                 resultats_criteres.append(artisan)
+        
+        st.session_state.resultats_recherche = resultats_criteres
+        st.session_state.type_recherche = "criteres"
 
-        if resultats_criteres:
-            st.success(f"🎉 {len(resultats_criteres)} prestataire(s) trouvé(s) !")
-            for index_art, artisan in enumerate(resultats_criteres):
+    # --- AFFICHAGE PERSISTANT DES RÉSULTATS (STOCKÉS EN MÉMOIRE) ---
+    if st.session_state.resultats_recherche is not None:
+        resultats = st.session_state.resultats_recherche
+        if resultats:
+            st.success(f"🎉 {len(resultats)} établissement(s) ou prestataire(s) trouvé(s) !")
+            for index_art, artisan in enumerate(resultats):
                 badge = artisan.get('badge', '⭐ Professionnel')
                 description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
                 
@@ -145,16 +110,15 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟩 WhatsApp Direct</button></a>', unsafe_allow_html=True)
                 
-                # Intégration de l'appel internet direct WebRTC dans le profil
                 with st.expander(f"🌐 Appel Internet Direct (Sans forfait) avec {artisan['nom']}"):
                     st.write(f"Établissez une connexion audio/vidéo sécurisée via internet avec **{artisan['nom']}** :")
-                    webrtc_streamer(key=f"call_crit_{index_art}", mode=WebRtcMode.SENDRECV)
+                    webrtc_streamer(key=f"call_res_{index_art}", mode=WebRtcMode.SENDRECV)
 
                 texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
                 st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
         else:
-            st.warning("Aucun prestataire trouvé pour ces critères.")
+            st.warning("Aucun établissement ou prestataire trouvé pour cette recherche.")
             
     st.markdown("---")
     st.subheader("🌟 Récemment ajoutés sur la plateforme")
