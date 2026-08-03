@@ -1,15 +1,15 @@
 import urllib.parse
 import streamlit as st
 import streamlit.components.v1 as components
-from database import get_connection, init_db
+from database import get_connection, init_db, rechercher_artisans_intelligent
 
 # Initialisation de la base de données SQLite
 init_db()
 
 st.set_page_config(page_title="DJASSA - Bêta", page_icon="🇨🇮", layout="centered")
 
-# Chargement des prestataires depuis SQLite
-def charger_artisans():
+# Chargement de tous les prestataires pour les statistiques et listes
+def charger_tous_artisans():
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT nom, metier, commune, description, badge, appel_url, whatsapp_url FROM artisans")
@@ -17,21 +17,14 @@ def charger_artisans():
     conn.close()
     return [
         {
-            "nom": r[0],
-            "metier": r[1],
-            "commune": r[2],
-            "description": r[3],
-            "badge": r[4],
-            "appel_url": r[5],
-            "whatsapp_url": r[6]
+            "nom": r[0], "metier": r[1], "commune": r[2],
+            "description": r[3], "badge": r[4], "appel_url": r[5], "whatsapp_url": r[6]
         } for r in lignes
     ]
 
-artisans = charger_artisans()
+tous_artisans = charger_tous_artisans()
 
 # Initialisation de la session
-if "resultats_recherche" not in st.session_state:
-    st.session_state.resultats_recherche = None
 if "appel_en_cours" not in st.session_state:
     st.session_state.appel_en_cours = None
 
@@ -57,7 +50,7 @@ st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
     
-    # --- INTERFACE D'APPEL 100% FONCTIONNELLE ---
+    # --- INTERFACE D'APPEL INTERACTIVE ---
     if st.session_state.appel_en_cours:
         nom_appele = st.session_state.appel_en_cours
         
@@ -68,96 +61,37 @@ if choix_menu == "🔍 Rechercher un prestataire":
             <meta charset="utf-8">
             <style>
                 body {{
-                    margin: 0;
-                    padding: 0;
-                    background-color: #0b0f19;
-                    color: white;
+                    margin: 0; padding: 0; background-color: #0b0f19; color: white;
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: space-between;
-                    align-items: center;
-                    height: 100vh;
-                    box-sizing: border-box;
-                    padding: 40px 20px;
-                    overflow: hidden;
+                    display: flex; flex-direction: column; justify-content: space-between; align-items: center;
+                    height: 100vh; box-sizing: border-box; padding: 40px 20px; overflow: hidden;
                 }}
-                .header-text {{
-                    text-align: center;
-                    margin-top: 10px;
-                }}
-                .header-text h2 {{
-                    font-size: 24px;
-                    font-weight: 500;
-                    margin: 0 0 8px 0;
-                }}
-                .header-text p {{
-                    color: #9ca3af;
-                    font-size: 14px;
-                    letter-spacing: 1px;
-                    margin: 0;
-                }}
+                .header-text {{ text-align: center; margin-top: 10px; }}
+                .header-text h2 {{ font-size: 24px; font-weight: 500; margin: 0 0 8px 0; }}
+                .header-text p {{ color: #9ca3af; font-size: 14px; letter-spacing: 1px; margin: 0; }}
                 .avatar-container {{
-                    width: 140px;
-                    height: 140px;
-                    background: linear-gradient(135deg, #0ea5e9, #f97316);
-                    border-radius: 50%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
+                    width: 140px; height: 140px; background: linear-gradient(135deg, #0ea5e9, #f97316);
+                    border-radius: 50%; display: flex; justify-content: center; align-items: center;
                     box-shadow: 0 0 35px rgba(14, 165, 233, 0.4);
                 }}
                 .avatar-inner {{
-                    width: 124px;
-                    height: 124px;
-                    background-color: #0b0f19;
-                    border-radius: 50%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    font-size: 55px;
+                    width: 124px; height: 124px; background-color: #0b0f19; border-radius: 50%;
+                    display: flex; justify-content: center; align-items: center; font-size: 55px;
                 }}
-                .controls-bar {{
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    gap: 22px;
-                    margin-bottom: 20px;
-                }}
+                .controls-bar {{ display: flex; justify-content: center; align-items: center; gap: 22px; margin-bottom: 20px; }}
                 .control-btn {{
-                    background-color: rgba(255, 255, 255, 0.12);
-                    width: 55px;
-                    height: 55px;
-                    border-radius: 50%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    font-size: 22px;
-                    cursor: pointer;
-                    transition: all 0.2s;
+                    background-color: rgba(255, 255, 255, 0.12); width: 55px; height: 55px;
+                    border-radius: 50%; display: flex; justify-content: center; align-items: center;
+                    font-size: 22px; cursor: pointer; transition: all 0.2s;
                 }}
-                .control-btn:hover {{
-                    background-color: rgba(255, 255, 255, 0.25);
-                }}
-                .control-btn.active {{
-                    background-color: #3b82f6;
-                }}
+                .control-btn:hover {{ background-color: rgba(255, 255, 255, 0.25); }}
+                .control-btn.active {{ background-color: #3b82f6; }}
                 .hangup-btn {{
-                    background-color: #dc2626;
-                    width: 65px;
-                    height: 65px;
-                    border-radius: 50%;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    font-size: 26px;
-                    cursor: pointer;
-                    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5);
-                    transition: transform 0.2s;
+                    background-color: #dc2626; width: 65px; height: 65px; border-radius: 50%;
+                    display: flex; justify-content: center; align-items: center; font-size: 26px;
+                    cursor: pointer; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5); transition: transform 0.2s;
                 }}
-                .hangup-btn:hover {{
-                    transform: scale(1.05);
-                }}
+                .hangup-btn:hover {{ transform: scale(1.05); }}
             </style>
         </head>
         <body>
@@ -165,158 +99,113 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 <h2>{nom_appele}</h2>
                 <p id="status-text">⏳ Connexion audio en cours...</p>
             </div>
-
-            <div class="avatar-container" id="avatar-box">
-                <div class="avatar-inner">
-                    🛒
-                </div>
+            <div class="avatar-container">
+                <div class="avatar-inner">🛒</div>
             </div>
-
             <div class="controls-bar">
-                <div class="control-btn" id="btn-fullscreen" title="Agrandir / Réduire l'écran" onclick="toggleFullscreen()">↙↗</div>
-                <div class="control-btn" id="btn-speaker" title="Haut-parleur" onclick="toggleSpeaker()">🔊</div>
-                <div class="control-btn" id="btn-mic" title="Couper le micro" onclick="toggleMic()">🔇</div>
-                <div class="hangup-btn" title="Raccrocher" onclick="window.location.href='?raccrocher=1'">📞</div>
+                <div class="control-btn" id="btn-fullscreen" onclick="toggleFullscreen()">↙↗</div>
+                <div class="control-btn" id="btn-speaker" onclick="toggleSpeaker()">🔊</div>
+                <div class="control-btn" id="btn-mic" onclick="toggleMic()">🔇</div>
+                <div class="hangup-btn" onclick="window.location.href='?raccrocher=1'">📞</div>
             </div>
-
             <script>
                 function toggleFullscreen() {{
                     if (!document.fullscreenElement) {{
-                        document.documentElement.requestFullscreen().catch(err => {{
-                            alert("Mode plein écran non autorisé par le navigateur.");
-                        }});
+                        document.documentElement.requestFullscreen().catch(err => {{}});
                         document.getElementById('btn-fullscreen').classList.add('active');
                     }} else {{
-                        if (document.exitFullscreen) {{
-                            document.exitFullscreen();
-                        }}
+                        if (document.exitFullscreen) document.exitFullscreen();
                         document.getElementById('btn-fullscreen').classList.remove('active');
                     }}
                 }}
-
                 let speakerOn = false;
                 function toggleSpeaker() {{
                     speakerOn = !speakerOn;
-                    let btn = document.getElementById('btn-speaker');
-                    if (speakerOn) {{
-                        btn.style.backgroundColor = '#22c55e';
-                    }} else {{
-                        btn.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
-                    }}
+                    document.getElementById('btn-speaker').style.backgroundColor = speakerOn ? '#22c55e' : 'rgba(255, 255, 255, 0.12)';
                 }}
-
                 let micMuted = false;
                 function toggleMic() {{
                     micMuted = !micMuted;
-                    let btn = document.getElementById('btn-mic');
-                    if (micMuted) {{
-                        btn.style.backgroundColor = '#dc2626';
-                    }} else {{
-                        btn.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
-                    }}
+                    document.getElementById('btn-mic').style.backgroundColor = micMuted ? '#dc2626' : 'rgba(255, 255, 255, 0.12)';
                 }}
             </script>
         </body>
         </html>
         """
-        
         components.html(html_appel, height=600, scrolling=False)
         st.stop()
 
-    # --- RECHERCHE ET LISTING CLASSIQUE ---
-    st.subheader("Espace de recherche")
-    st.info(f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
+    # --- ESPACE DE RECHERCHE INTELLIGENTE ---
+    st.subheader("Espace de recherche intelligente")
+    st.info(f"🔥 Déjà **{len(tous_artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
-    st.markdown("### 🎯 Recherche directe par nom d'établissement")
-    with st.form("form_recherche_nom"):
-        recherche_nom = st.text_input("Tapez le nom recherché (ex: Chez Paul)", placeholder="Ex: Chez Paul...")
-        lancer_recherche_nom = st.form_submit_button("Rechercher par nom", type="primary")
+    col_recherche, col_commune = st.columns([2, 1])
+    
+    communes_disponibles = ["Toutes les communes"] + sorted(list(set(art['commune'] for art in tous_artisans if art['commune'])))
+    
+    with col_recherche:
+        mot_cle = st.text_input("🔍 Recherche par nom, métier ou mot-clé", placeholder="Ex: Coiffure, Plombier, Maquis...")
+    with col_commune:
+        commune_selectionnee = st.selectbox("📍 Filtrer par commune", communes_disponibles)
 
-    if lancer_recherche_nom and recherche_nom.strip():
-        st.session_state.resultats_recherche = [art for art in artisans if recherche_nom.strip().lower() in art['nom'].lower()]
+    resultats = rechercher_artisans_intelligent(query=mot_cle, commune_filtre=commune_selectionnee)
+
+    metiers_populaires = sorted(list(set(art['metier'] for art in tous_artisans if art['metier'])))
+    if metiers_populaires:
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.write("💡 **Secteurs populaires :**")
+        cols_s = st.columns(min(len(metiers_populaires), 4))
+        for i, met in enumerate(metiers_populaires[:4]):
+            with cols_s[i]:
+                if st.button(met, use_container_width=True, key=f"sug_{i}"):
+                    mot_cle = met
+                    resultats = rechercher_artisans_intelligent(query=met, commune_filtre=commune_selectionnee)
 
     st.markdown("---")
-    st.markdown("### 🔍 Ou filtrez par secteur et commune")
-    
-    # Nettoyage et normalisation des secteurs pour éviter les doublons de casse (Coiffure / coiffure)
-    metiers_bruts = set()
-    for artisan in artisans:
-        metier_text = artisan.get('metier', '').strip().capitalize()
-        if len(metier_text) > 2:
-            metiers_bruts.add(metier_text)
 
-    metiers_disponibles = sorted(list(metiers_bruts))
-    
-    with st.form("form_recherche_criteres"):
-        metier_cherche = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
-        commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon, Marcory, Plateau)")
-        lancer_recherche_criteres = st.form_submit_button("Lancer la recherche par critères", type="primary")
-
-    if metiers_disponibles:
-        st.write("💡 **Suggestions de secteurs populaires :**")
-        cols_metiers = st.columns(min(len(metiers_disponibles), 4))
-        for i, met in enumerate(metiers_disponibles[:4]):
-            with cols_metiers[i]:
-                if st.button(met, use_container_width=True, key=f"btn_met_{i}"):
-                    metier_cherche = met
-                    lancer_recherche_criteres = True
-
-    if lancer_recherche_criteres:
-        resultats_criteres = []
-        for artisan in artisans:
-            metier_match = metier_cherche.lower() in artisan['metier'].lower() if metier_cherche else True
-            commune_match = commune_cherche.lower() in artisan['commune'].lower() if commune_cherche else True
+    if resultats:
+        st.success(f"🎉 {len(resultats)} établissement(s) ou prestataire(s) trouvé(s) !")
+        for index_art, artisan in enumerate(resultats):
+            badge = artisan.get('badge', '⭐ Professionnel')
+            description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
+            telephone_brut = artisan.get('appel_url', 'tel:+22500000000').replace('tel:', '')
             
-            if metier_match and commune_match:
-                resultats_criteres.append(artisan)
-        
-        st.session_state.resultats_recherche = resultats_criteres
-
-    if st.session_state.resultats_recherche is not None:
-        resultats = st.session_state.resultats_recherche
-        if resultats:
-            st.success(f"🎉 {len(resultats)} établissement(s) ou prestataire(s) trouvé(s) !")
-            for index_art, artisan in enumerate(resultats):
-                badge = artisan.get('badge', '⭐ Professionnel')
-                description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
-                telephone_brut = artisan.get('appel_url', 'tel:+22500000000').replace('tel:', '')
-                
-                with st.container():
-                    st.markdown(
-                        f"""
-                        <div style="padding: 20px; border-radius: 10px; border: 1px solid #333333; margin-bottom: 10px; background-color: #1e1e1e;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <h3 style="margin: 0; color: #3b82f6;">{artisan['nom']}</h3>
-                                <span style="background-color: #d97706; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">{badge}</span>
-                            </div>
-                            <p style="margin: 8px 0 5px 0; color: #e5e7eb;"><strong>{artisan['metier']}</strong> - 📍 {artisan['commune']}</p>
-                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 14px;">{description}</p>
+            with st.container():
+                st.markdown(
+                    f"""
+                    <div style="padding: 20px; border-radius: 10px; border: 1px solid #333333; margin-bottom: 10px; background-color: #1e1e1e;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="margin: 0; color: #3b82f6;">{artisan['nom']}</h3>
+                            <span style="background-color: #d97706; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">{badge}</span>
                         </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 {telephone_brut}</button></a>', unsafe_allow_html=True)
-                with col2:
-                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
-                
-                cle_appel = f"appel_sqlite_clean_{index_art}"
-                if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
-                    st.session_state.appel_en_cours = artisan['nom']
-                    st.rerun()
+                        <p style="margin: 8px 0 5px 0; color: #e5e7eb;"><strong>{artisan['metier']}</strong> - 📍 {artisan['commune']}</p>
+                        <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 14px;">{description}</p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 {telephone_brut}</button></a>', unsafe_allow_html=True)
+            with col2:
+                st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
+            
+            cle_appel = f"appel_smart_{index_art}"
+            if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
+                st.session_state.appel_en_cours = artisan['nom']
+                st.rerun()
 
-                texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
-                st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
-                st.markdown("<br>", unsafe_allow_html=True)
-        else:
-            st.warning("Aucun établissement ou prestataire trouvé pour cette recherche.")
+            texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
+            st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+    else:
+        st.warning("Aucun établissement ou prestataire trouvé pour cette recherche.")
             
     st.markdown("---")
     st.subheader("🌟 Récemment ajoutés sur la plateforme")
-    if artisans:
-        derniers = artisans[-3:]
+    if tous_artisans:
+        derniers = tous_artisans[-3:]
         for art in reversed(derniers):
             st.markdown(f"- **{art['nom']}** ({art['metier']}) à *{art['commune']}*")
     else:
@@ -327,7 +216,7 @@ elif choix_menu == "📝 Enregistrer un établissement":
     
     with st.form("form_enregistrement"):
         nom = st.text_input("Nom de l'établissement ou de l'artisan (ex: Chez Paul)")
-        metier = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
+        metier = st.text_input("Métier ou secteur (ex: Boulangerie, Hôtel, Résidence)")
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
         description = st.text_area("Courte description des services proposés (ex: Situé au Vallon)")
         badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
@@ -361,10 +250,10 @@ elif choix_menu == "📝 Enregistrer un établissement":
 
 elif choix_menu == "⚙️ Administration & Modération" and est_admin:
     st.subheader("🔒 Administration & Modération DJASSA")
-    st.info(f"📊 Total Établissements : {len(artisans)}")
+    st.info(f"📊 Total Établissements : {len(tous_artisans)}")
     st.write("Gestion, Attribution de Badges & Suppression des Faux Profils :")
     
-    if artisans:
+    if tous_artisans:
         st.markdown("---")
         conn = get_connection()
         cursor = conn.cursor()
