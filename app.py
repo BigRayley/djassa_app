@@ -1,3 +1,4 @@
+import base64
 import urllib.parse
 import streamlit as st
 import streamlit.components.v1 as components
@@ -75,7 +76,7 @@ with st.sidebar:
 st.title("🇨🇮 DJASSA")
 st.write("La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.")
 
-# --- VUE PAGE DE CHAT DÉDIÉE (PLEIN ÉCRAN SI UN CHAT EST ACTIF) ---
+# --- VUE PAGE DE CHAT DÉDIÉE AVEC SUPPORT PHOTOS ---
 if st.session_state.chat_actif_id is not None:
     artisan_id = st.session_state.chat_actif_id
     artisan_nom = st.session_state.chat_actif_nom
@@ -94,46 +95,59 @@ if st.session_state.chat_actif_id is not None:
         messages_artisan = obtenir_messages(artisan_id)
         
         # Zone d'affichage des bulles de messages
-        chat_container = st.container(height=400)
+        chat_container = st.container(height=420)
         with chat_container:
             if messages_artisan:
-                # On inverse pour afficher du plus ancien au plus récent
                 for msg in reversed(messages_artisan):
                     est_expediteur_actuel = (msg['expediteur'] == st.session_state.utilisateur_pseudo)
+                    
+                    # Construction du contenu image si présent
+                    image_html = ""
+                    if msg['image_url']:
+                        image_html = f"<br><img src='{msg['image_url']}' style='max-width: 220px; border-radius: 8px; margin-top: 6px;'/>"
+                    
+                    texte_contenu = f"<br>{msg['contenu']}" if msg['contenu'] else ""
                     
                     if est_expediteur_actuel:
                         st.markdown(f"""
                         <div style="background-color: #1e3a8a; padding: 12px 16px; border-radius: 15px 15px 3px 15px; margin: 10px 0; margin-left: 25%; color: white; text-align: right; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                             <span style="font-size: 11px; color: #93c5fd; display: block; margin-bottom: 3px;">Moi ({msg['date_envoi']})</span>
-                            {msg['contenu']}
+                            {texte_contenu}
+                            {image_html}
                         </div>
                         """, unsafe_allow_html=True)
                     else:
                         st.markdown(f"""
                         <div style="background-color: #374151; padding: 12px 16px; border-radius: 15px 15px 15px 3px; margin: 10px 0; margin-right: 25%; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                             <span style="font-size: 11px; color: #cbd5e1; display: block; margin-bottom: 3px;">{msg['expediteur']} ({msg['date_envoi']})</span>
-                            {msg['contenu']}
+                            {texte_contenu}
+                            {image_html}
                         </div>
                         """, unsafe_allow_html=True)
             else:
-                st.info("C'est le début de la conversation. Envoyez un premier message au prestataire !")
+                st.info("C'est le début de la conversation. Envoyez un message ou une photo (panne, produit...) au prestataire !")
 
-        # Formulaire d'envoi en bas de page de chat
+        # Formulaire d'envoi avec texte ET photo
         with st.form(f"form_chat_page_{artisan_id}", clear_on_submit=True):
-            col_txt, col_btn = st.columns([4, 1])
-            with col_txt:
-                texte_msg = st.text_input("Votre message...", placeholder="Écrivez votre message ici...", label_visibility="collapsed")
-            with col_btn:
-                btn_envoyer = st.form_submit_button("Envoyer 🚀", use_container_width=True, type="primary")
+            texte_msg = st.text_input("Votre message...", placeholder="Décrivez votre besoin ou posez votre question...")
+            photo_telechargee = st.file_uploader("📷 Joindre une photo (optionnel)", type=["png", "jpg", "jpeg"])
+            btn_envoyer = st.form_submit_button("Envoyer le message ou la photo 🚀", use_container_width=True, type="primary")
 
             if btn_envoyer:
-                if texte_msg.strip():
-                    envoyer_message(artisan_id, st.session_state.utilisateur_pseudo, texte_msg.strip())
+                image_base64 = None
+                if photo_telechargee is not None:
+                    bytes_image = photo_telechargee.read()
+                    encoded = base64.b64encode(bytes_image).decode()
+                    extension = photo_telechargee.name.split('.')[-1]
+                    image_base64 = f"data:image/{extension};base64,{encoded}"
+                
+                if texte_msg.strip() or image_base64:
+                    envoyer_message(artisan_id, st.session_state.utilisateur_pseudo, texte_msg.strip(), image_base64)
                     st.rerun()
                 else:
-                    st.warning("Le message est vide.")
+                    st.warning("Veuillez écrire un message ou joindre une photo.")
                     
-    st.stop() # Arrête l'affichage du reste de l'appli pour se focaliser sur la page de chat
+    st.stop()
 
 # --- NAVIGATION NORMALE ---
 if est_admin:
