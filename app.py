@@ -35,11 +35,10 @@ st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
     
-    # --- INTERFACE D'APPEL STYLE WAVE FIDELE AVEC HTML/JS SÉCURISÉ ---
+    # --- INTERFACE D'APPEL STYLE WAVE IDENTIQUE (SANS BARRE ROUGE EN BAS) ---
     if st.session_state.appel_en_cours:
         nom_appele = st.session_state.appel_en_cours
         
-        # Composant HTML/CSS/JS complet pour l'interface d'appel plein écran style Wave
         html_appel = f"""
         <!DOCTYPE html>
         <html>
@@ -63,7 +62,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 }}
                 .header-text {{
                     text-align: center;
-                    margin-top: 20px;
+                    margin-top: 10px;
                 }}
                 .header-text h2 {{
                     font-size: 24px;
@@ -77,34 +76,34 @@ if choix_menu == "🔍 Rechercher un prestataire":
                     margin: 0;
                 }}
                 .avatar-container {{
-                    width: 130px;
-                    height: 130px;
+                    width: 140px;
+                    height: 140px;
                     background: linear-gradient(135deg, #0ea5e9, #f97316);
                     border-radius: 50%;
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    box-shadow: 0 0 30px rgba(14, 165, 233, 0.4);
+                    box-shadow: 0 0 35px rgba(14, 165, 233, 0.4);
                 }}
                 .avatar-inner {{
-                    width: 116px;
-                    height: 116px;
+                    width: 124px;
+                    height: 124px;
                     background-color: #0b0f19;
                     border-radius: 50%;
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    font-size: 50px;
+                    font-size: 55px;
                 }}
                 .controls-bar {{
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    gap: 25px;
-                    margin-bottom: 20px;
+                    gap: 20px;
+                    margin-bottom: 10px;
                 }}
                 .control-btn {{
-                    background-color: rgba(255, 255, 255, 0.1);
+                    background-color: rgba(255, 255, 255, 0.12);
                     width: 55px;
                     height: 55px;
                     border-radius: 50%;
@@ -116,7 +115,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                     transition: background 0.2s;
                 }}
                 .control-btn:hover {{
-                    background-color: rgba(255, 255, 255, 0.2);
+                    background-color: rgba(255, 255, 255, 0.25);
                 }}
                 .hangup-btn {{
                     background-color: #dc2626;
@@ -128,7 +127,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                     align-items: center;
                     font-size: 26px;
                     cursor: pointer;
-                    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+                    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.5);
                     transition: transform 0.2s;
                 }}
                 .hangup-btn:hover {{
@@ -149,7 +148,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
             </div>
 
             <div class="controls-bar">
-                <div class="control-btn" title="Agrandir / Réduire l'écran" onclick="alert('Mode plein écran')">🔲</div>
+                <div class="control-btn" title="Options / Clavier" onclick="alert('Options du clavier')">⚙️</div>
                 <div class="control-btn" title="Haut-parleur" onclick="alert('Haut-parleur activé')">🔊</div>
                 <div class="control-btn" title="Couper le micro" onclick="alert('Micro coupé')">🔇</div>
                 <div class="hangup-btn" title="Raccrocher" onclick="window.parent.document.getElementById('raccrocher_btn').click()">📞</div>
@@ -158,11 +157,11 @@ if choix_menu == "🔍 Rechercher un prestataire":
         </html>
         """
         
-        # Affichage du composant HTML
-        components.html(html_appel, height=500)
+        # Affichage du composant sans laisser de bouton Streamlit visible en dessous
+        components.html(html_appel, height=480)
         
-        # Bouton Streamlit caché qui capte l'action de raccrocher depuis le composant HTML
-        if st.button("🔴 Raccrocher l'appel", key="raccrocher_btn", type="primary", use_container_width=True):
+        # Bouton invisible gérant la fin de l'appel
+        if st.button("Raccrocher", key="raccrocher_btn", use_container_width=True):
             st.session_state.appel_en_cours = None
             st.rerun()
             
@@ -248,7 +247,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
                 
-                cle_appel = f"appel_wave_exact_{index_art}"
+                cle_appel = f"appel_wave_clean_final_{index_art}"
                 if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
                     st.session_state.appel_en_cours = artisan['nom']
                     st.rerun()
@@ -264,7 +263,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
     if artisans:
         derniers = artisans[-3:]
         for art in reversed(derniers):
-            st.markdown(f"- **{art['nom']}** ({artisan['metier']}) à *{artisan['commune']}*")
+            st.markdown(f"- **{art['nom']}** ({art['metier']}) à *{art['commune']}*")
     else:
         st.write("Aucun établissement pour le moment.")
 
@@ -273,7 +272,7 @@ elif choix_menu == "📝 Enregistrer un établissement":
     
     with st.form("form_enregistrement"):
         nom = st.text_input("Nom de l'établissement ou de l'artisan (ex: Chez Paul)")
-        metier = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
+        metier = st.text_input("Métier ou secteur (ex: Boulangerie, Hôtel, Résidence)")
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
         description = st.text_area("Courte description des services proposés (ex: Situé au Vallon)")
         badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
