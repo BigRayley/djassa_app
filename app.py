@@ -4,9 +4,6 @@ import streamlit as st
 
 st.set_page_config(page_title="DJASSA - Bêta", page_icon="🇨🇮", layout="centered")
 
-st.title("🇨🇮 DJASSA")
-st.write("La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.")
-
 # Chargement des prestataires depuis le fichier JSON
 try:
     with open("data.json", "r", encoding="utf-8") as f:
@@ -18,13 +15,19 @@ except FileNotFoundError:
 params = st.query_params
 est_admin = params.get("admin") == "djassa_admin_secret_2026"
 
-options_menu = ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement"]
+# En-tête principal et Navigation horizontale moderne (inspirée de l'Écran 1)
+st.title("🇨🇮 DJASSA")
+st.write("La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.")
+
+# Création des onglets de navigation dynamiques
 if est_admin:
-    options_menu.append("⚙️ Administration")
+    choix_menu = st.radio("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement", "⚙️ Administration & Modération"], horizontal=True)
+else:
+    choix_menu = st.radio("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement"], horizontal=True)
 
-menu = st.sidebar.selectbox("Navigation", options_menu)
+st.markdown("---")
 
-if menu == "🔍 Rechercher un prestataire":
+if choix_menu == "🔍 Rechercher un prestataire":
     st.subheader("Espace de recherche")
     
     st.info(f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
@@ -55,11 +58,10 @@ if menu == "🔍 Rechercher un prestataire":
         if resultats:
             st.success(f"{len(resultats)} prestataire(s) trouvé(s) !")
             for artisan in resultats:
-                # Récupération sécurisée des nouveaux champs (badge et description par défaut si absents)
                 badge = artisan.get('badge', '⭐ Professionnel')
                 description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
                 
-                # Design de carte moderne et stylisé avec badges et descriptions
+                # Design de carte moderne avec badges et descriptions
                 with st.container():
                     st.markdown(
                         f"""
@@ -96,7 +98,7 @@ if menu == "🔍 Rechercher un prestataire":
     else:
         st.write("Aucun établissement pour le moment.")
 
-elif menu == "📝 Enregistrer un établissement":
+elif choix_menu == "📝 Enregistrer un établissement":
     st.subheader("Enregistrer un nouveau prestataire ou établissement")
     
     with st.form("form_enregistrement"):
@@ -137,25 +139,41 @@ elif menu == "📝 Enregistrer un établissement":
                 
                 st.success("🎉 Établissement enregistré avec succès et mis en page !")
 
-elif menu == "⚙️ Administration" and est_admin:
-    st.subheader("🔐 Espace Administrateur Privé")
-    st.success("Accès administrateur reconnu via l'URL sécurisée !")
-    st.write(f"Nombre total d'établissements : **{len(artisans)}**")
+elif choix_menu == "⚙️ Administration & Modération" and est_admin:
+    st.subheader("🔒 Administration & Modération DJASSA")
+    st.info(f"📊 Total Établissements : {len(artisans)}")
+    st.write("Gestion, Attribution de Badges & Suppression des Faux Profils :")
     
     if artisans:
         st.markdown("---")
-        st.subheader("Liste des prestataires à gérer :")
-        
         for index, artisan in enumerate(artisans):
-            col_info, col_btn = st.columns([3, 1])
-            with col_info:
-                st.write(f"**{artisan['nom']}** - {artisan['metier']} ({artisan['commune']})")
-            with col_btn:
-                if st.button("🗑️ Supprimer", key=f"suppr_{index}"):
+            with st.container():
+                st.markdown(
+                    f"""
+                    <div style="padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 10px; background-color: #1e1e1e;">
+                        <p style="margin: 0; color: #fff;"><strong>#{index+1} - {artisan['nom']}</strong> ({artisan['metier']} - {artisan['commune']})</p>
+                        <p style="margin: 5px 0 0 0; font-size: 13px; color: #aaa;">Badge actuel : <strong>{artisan.get('badge', 'Professionnel')}</strong></p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+            col_b, col_s = st.columns([2, 1])
+            with col_b:
+                nouveau_badge = st.selectbox("Modifier le badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"], key=f"badge_{index}")
+                if st.button("Valider Badge", key=f"val_badge_{index}"):
+                    artisans[index]['badge'] = nouveau_badge
+                    with open("data.json", "w", encoding="utf-8") as f:
+                        json.dump(artisans, f, ensure_ascii=False, indent=2)
+                    st.success("Badge mis à jour avec succès !")
+                    st.rerun()
+            with col_s:
+                if st.button("🗑️ Supprimer (Faux profil)", key=f"suppr_{index}", type="primary"):
                     artisans.pop(index)
                     with open("data.json", "w", encoding="utf-8") as f:
                         json.dump(artisans, f, ensure_ascii=False, indent=2)
                     st.success(f"'{artisan['nom']}' a été supprimé !")
                     st.rerun()
+            st.markdown("<br>", unsafe_allow_html=True)
     else:
-        st.info("Aucun prestataire à afficher.")
+        st.info("Aucun prestataire à modérer.")
