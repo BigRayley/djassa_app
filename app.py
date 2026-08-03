@@ -34,21 +34,23 @@ st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
     
-    # --- INTERFACE D'APPEL TYPE WAVE PROPRE ---
+    # --- INTERFACE D'APPEL AUX COULEURS DE DJASSA ---
     if st.session_state.appel_en_cours:
         nom_appele = st.session_state.appel_en_cours
         
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.markdown(f"<h1 style='text-align: center; color: white;'>{nom_appele}</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #9ca3af; letter-spacing: 2px;'>Connexion audio en cours...</p>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(f"<h1 style='text-align: center; color: #1e293b; font-size: 28px;'>{nom_appele}</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #64748b; letter-spacing: 1.5px; font-weight: 500;'>Connexion audio en cours...</p>", unsafe_allow_html=True)
         
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         col_avatar = st.columns([1, 1, 1])
         with col_avatar[1]:
             st.markdown(
                 """
-                <div style="width: 130px; height: 130px; background-color: #0ea5e9; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto; box-shadow: 0 0 35px rgba(14, 165, 233, 0.6);">
-                    <span style="font-size: 55px;">🐧</span>
+                <div style="width: 140px; height: 140px; background: linear-gradient(135deg, #3b82f6, #f97316); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto; box-shadow: 0 10px 25px rgba(249, 115, 22, 0.3);">
+                    <div style="width: 126px; height: 126px; background-color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                        <span style="font-size: 55px;">🛒</span>
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -143,7 +145,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
                 
-                cle_appel = f"appel_wave_{index_art}"
+                cle_appel = f"appel_djassa_{index_art}"
                 if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
                     st.session_state.appel_en_cours = artisan['nom']
                     st.rerun()
@@ -159,7 +161,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
     if artisans:
         derniers = artisans[-3:]
         for art in reversed(derniers):
-            st.markdown(f"- **{art['nom']}** ({art['metier']}) à *{art['commune']}*")
+            st.markdown(f"- **{art['nom']}** ({artisan['metier']}) à *{art['commune']}*")
     else:
         st.write("Aucun établissement pour le moment.")
 
@@ -168,7 +170,7 @@ elif choix_menu == "📝 Enregistrer un établissement":
     
     with st.form("form_enregistrement"):
         nom = st.text_input("Nom de l'établissement ou de l'artisan (ex: Chez Paul)")
-        metier = st.text_input("Métier ou secteur (ex: Boulangerie, Hôtel, Résidence)")
+        metier = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
         description = st.text_area("Courte description des services proposés (ex: Situé au Vallon)")
         badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
