@@ -18,8 +18,13 @@ if "resultats_recherche" not in st.session_state:
 if "appel_en_cours" not in st.session_state:
     st.session_state.appel_en_cours = None
 
-# --- SECURITE ADMIN CACHEE PAR URL ---
+# --- GESTION DE LA FIN D'APPEL DEPUIS LE BOUTON ROUGE ---
 params = st.query_params
+if "raccrocher" in params:
+    st.session_state.appel_en_cours = None
+    st.query_params.clear()
+    st.rerun()
+
 est_admin = params.get("admin") == "djassa_admin_secret_2026"
 
 # En-tête principal et Navigation
@@ -35,9 +40,12 @@ st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
     
-    # --- INTERFACE D'APPEL EXACTE MODE WAVE AVEC ICÔNE DE RÉDUCTION ET BOUTON ROUGE ---
+    # --- INTERFACE D'APPEL PLEIN ÉCRAN SANS AUCUN BOUTON PARASITE EN BAS ---
     if st.session_state.appel_en_cours:
         nom_appele = st.session_state.appel_en_cours
+        
+        # Récupération de l'URL actuelle pour rediriger proprement lors du clic sur le bouton rouge
+        base_url = str(st.context.headers.get("Host", ""))
         
         html_appel = f"""
         <!DOCTYPE html>
@@ -100,7 +108,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                     justify-content: center;
                     align-items: center;
                     gap: 22px;
-                    margin-bottom: 10px;
+                    margin-bottom: 20px;
                 }}
                 .control-btn {{
                     background-color: rgba(255, 255, 255, 0.12);
@@ -151,20 +159,14 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 <div class="control-btn" title="Réduire l'écran" onclick="alert('Réduire l’écran')">↙↗</div>
                 <div class="control-btn" title="Haut-parleur" onclick="alert('Haut-parleur activé')">🔊</div>
                 <div class="control-btn" title="Couper le micro" onclick="alert('Micro coupé')">🔇</div>
-                <div class="hangup-btn" title="Raccrocher" onclick="window.parent.document.getElementById('raccrocher_btn').click()">📞</div>
+                <div class="hangup-btn" title="Raccrocher" onclick="window.location.href='?raccrocher=1'">📞</div>
             </div>
         </body>
         </html>
         """
         
-        # Affichage du composant d'appel épuré
-        components.html(html_appel, height=480)
-        
-        # Bouton invisible pour gérer la déconnexion via le bouton rouge
-        if st.button("Raccrocher", key="raccrocher_btn", use_container_width=True):
-            st.session_state.appel_en_cours = None
-            st.rerun()
-            
+        # Affichage propre du composant plein écran sans aucun élément indésirable en dessous
+        components.html(html_appel, height=600, scrolling=False)
         st.stop()
 
     # --- RECHERCHE ET LISTING CLASSIQUE ---
@@ -247,7 +249,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
                 
-                cle_appel = f"appel_wave_exact_final_{index_art}"
+                cle_appel = f"appel_wave_clean_final_{index_art}"
                 if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
                     st.session_state.appel_en_cours = artisan['nom']
                     st.rerun()
@@ -263,7 +265,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
     if artisans:
         derniers = artisans[-3:]
         for art in reversed(derniers):
-            st.markdown(f"- **{art['nom']}** ({artisan['metier']}) à *{artisan['commune']}*")
+            st.markdown(f"- **{art['nom']}** ({artisan['metier']}) à *{art['commune']}*")
     else:
         st.write("Aucun établissement pour le moment.")
 
