@@ -34,7 +34,7 @@ st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
     
-    # --- INTERFACE D'APPEL COMPLÈTE TYPE WAVE ---
+    # --- INTERFACE D'APPEL TYPE WAVE COMPLÈTE AVEC LOGO DE RACCROCHÉ ---
     if st.session_state.appel_en_cours:
         nom_appele = st.session_state.appel_en_cours
         
@@ -58,7 +58,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
         
         st.markdown("<br><br>", unsafe_allow_html=True)
         
-        # Barre de contrôle interactive (Haut-parleur, Micro, etc.)
+        # Barre de contrôle interactive (Haut-parleur, Micro)
         st.markdown(
             """
             <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
@@ -69,10 +69,10 @@ if choix_menu == "🔍 Rechercher un prestataire":
             unsafe_allow_html=True
         )
 
-        # Bouton rouge pour raccrocher
+        # Bouton rouge avec l'icône de raccroché
         col_btn = st.columns([1, 2, 1])
         with col_btn[1]:
-            if st.button("🔴 Raccrocher l'appel", type="primary", use_container_width=True):
+            if st.button("🔴 📞 Raccrocher", type="primary", use_container_width=True):
                 st.session_state.appel_en_cours = None
                 st.rerun()
         
@@ -183,7 +183,7 @@ elif choix_menu == "📝 Enregistrer un établissement":
     
     with st.form("form_enregistrement"):
         nom = st.text_input("Nom de l'établissement ou de l'artisan (ex: Chez Paul)")
-        metier = st.text_input("Métier ou secteur (ex: Boulangerie, Hôtel, Résidence)")
+        metier = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
         description = st.text_area("Courte description des services proposés (ex: Situé au Vallon)")
         badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
