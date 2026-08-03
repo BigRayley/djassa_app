@@ -31,13 +31,17 @@ def calculer_moyenne_avis(avis_list):
     total = sum(a['note'] for a in avis_list)
     return round(total / len(avis_list), 1)
 
-# Initialisation des variables de session (Pseudo automatique & états)
+# Initialisation des variables de session
 if "utilisateur_pseudo" not in st.session_state:
     st.session_state.utilisateur_pseudo = ""
 if "resultats_recherche" not in st.session_state:
     st.session_state.resultats_recherche = None
 if "appel_en_cours" not in st.session_state:
     st.session_state.appel_en_cours = None
+if "chat_actif_id" not in st.session_state:
+    st.session_state.chat_actif_id = None
+if "chat_actif_nom" not in st.session_state:
+    st.session_state.chat_actif_nom = ""
 
 # --- GESTION DE LA FIN D'APPEL DEPUIS LE BOUTON ROUGE ---
 params = st.query_params
@@ -48,11 +52,7 @@ if "raccrocher" in params:
 
 est_admin = params.get("admin") == "djassa_admin_secret_2026"
 
-# En-tête principal et Navigation
-st.title("🇨🇮 DJASSA")
-st.write("La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.")
-
-# --- BARRE D'IDENTIFICATION UTILISATEUR DISCRÈTE ---
+# Barre latérale d'identification
 with st.sidebar:
     st.header("👤 Votre Session")
     if not st.session_state.utilisateur_pseudo:
@@ -71,6 +71,71 @@ with st.sidebar:
             st.rerun()
     st.markdown("---")
 
+# En-tête principal
+st.title("🇨🇮 DJASSA")
+st.write("La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.")
+
+# --- VUE PAGE DE CHAT DÉDIÉE (PLEIN ÉCRAN SI UN CHAT EST ACTIF) ---
+if st.session_state.chat_actif_id is not None:
+    artisan_id = st.session_state.chat_actif_id
+    artisan_nom = st.session_state.chat_actif_nom
+    
+    if st.button("← Retour aux recherches", type="secondary"):
+        st.session_state.chat_actif_id = None
+        st.session_state.chat_actif_nom = ""
+        st.rerun()
+        
+    st.markdown(f"## 💬 Discussion avec {artisan_nom}")
+    st.markdown("---")
+    
+    if not st.session_state.utilisateur_pseudo:
+        st.error("⚠️ Veuillez renseigner votre pseudo dans le menu latéral à gauche avant de pouvoir écrire dans le chat.")
+    else:
+        messages_artisan = obtenir_messages(artisan_id)
+        
+        # Zone d'affichage des bulles de messages
+        chat_container = st.container(height=400)
+        with chat_container:
+            if messages_artisan:
+                # On inverse pour afficher du plus ancien au plus récent
+                for msg in reversed(messages_artisan):
+                    est_expediteur_actuel = (msg['expediteur'] == st.session_state.utilisateur_pseudo)
+                    
+                    if est_expediteur_actuel:
+                        st.markdown(f"""
+                        <div style="background-color: #1e3a8a; padding: 12px 16px; border-radius: 15px 15px 3px 15px; margin: 10px 0; margin-left: 25%; color: white; text-align: right; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                            <span style="font-size: 11px; color: #93c5fd; display: block; margin-bottom: 3px;">Moi ({msg['date_envoi']})</span>
+                            {msg['contenu']}
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style="background-color: #374151; padding: 12px 16px; border-radius: 15px 15px 15px 3px; margin: 10px 0; margin-right: 25%; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                            <span style="font-size: 11px; color: #cbd5e1; display: block; margin-bottom: 3px;">{msg['expediteur']} ({msg['date_envoi']})</span>
+                            {msg['contenu']}
+                        </div>
+                        """, unsafe_allow_html=True)
+            else:
+                st.info("C'est le début de la conversation. Envoyez un premier message au prestataire !")
+
+        # Formulaire d'envoi en bas de page de chat
+        with st.form(f"form_chat_page_{artisan_id}", clear_on_submit=True):
+            col_txt, col_btn = st.columns([4, 1])
+            with col_txt:
+                texte_msg = st.text_input("Votre message...", placeholder="Écrivez votre message ici...", label_visibility="collapsed")
+            with col_btn:
+                btn_envoyer = st.form_submit_button("Envoyer 🚀", use_container_width=True, type="primary")
+
+            if btn_envoyer:
+                if texte_msg.strip():
+                    envoyer_message(artisan_id, st.session_state.utilisateur_pseudo, texte_msg.strip())
+                    st.rerun()
+                else:
+                    st.warning("Le message est vide.")
+                    
+    st.stop() # Arrête l'affichage du reste de l'appli pour se focaliser sur la page de chat
+
+# --- NAVIGATION NORMALE ---
 if est_admin:
     choix_menu = st.radio("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement", "⚙️ Administration & Modération"], horizontal=True)
 else:
@@ -247,9 +312,17 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
                 
+                # Bouton Appel internet
                 cle_appel = f"appel_smart_{index_art}"
                 if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
                     st.session_state.appel_en_cours = artisan['nom']
+                    st.rerun()
+
+                # --- BOUTON POUR OUVRIR LA PAGE DE CHAT DÉDIÉE ---
+                nb_msg = len(obtenir_messages(artisan_id))
+                if st.button(f"💬 Ouvrir la discussion en direct avec {artisan['nom']} ({nb_msg} messages)", key=f"btn_chat_{artisan_id}", use_container_width=True, type="primary"):
+                    st.session_state.chat_actif_id = artisan_id
+                    st.session_state.chat_actif_nom = artisan['nom']
                     st.rerun()
 
                 # --- MENU DÉROULANT : AVIS & NOTES ---
@@ -270,52 +343,6 @@ if choix_menu == "🔍 Rechercher un prestataire":
                             ajouter_avis(artisan_id, note_donnee, comm_donne.strip())
                             st.success("Merci ! Votre avis a été enregistré.")
                             st.rerun()
-
-                # --- VRAI CHAT DIRECT INTELLIGENT ---
-                messages_artisan = obtenir_messages(artisan_id)
-                with st.expander(f"💬 Discussion en direct avec {artisan['nom']} ({len(messages_artisan)} messages)"):
-                    
-                    # Conteneur de style chat direct (bulles de message)
-                    if messages_artisan:
-                        for msg in messages_artisan:
-                            est_expediteur_actuel = (msg['expediteur'] == st.session_state.utilisateur_pseudo)
-                            
-                            if est_expediteur_actuel:
-                                # Bulle de l'utilisateur connecté (alignée à droite / style épuré)
-                                st.markdown(f"""
-                                <div style="background-color: #1e3a8a; padding: 10px 14px; border-radius: 12px 12px 0px 12px; margin: 8px 0; margin-left: 20%; color: white; text-align: right;">
-                                    <span style="font-size: 11px; color: #93c5fd; display: block; margin-bottom: 2px;">Moi ({msg['date_envoi']})</span>
-                                    {msg['contenu']}
-                                </div>
-                                """, unsafe_allow_html=True)
-                            else:
-                                # Bulle des autres utilisateurs ou du prestataire
-                                st.markdown(f"""
-                                <div style="background-color: #374151; padding: 10px 14px; border-radius: 12px 12px 12px 0px; margin: 8px 0; margin-right: 20%; color: white;">
-                                    <span style="font-size: 11px; color: #cbd5e1; display: block; margin-bottom: 2px;">{msg['expediteur']} ({msg['date_envoi']})</span>
-                                    {msg['contenu']}
-                                </div>
-                                """, unsafe_allow_html=True)
-                    else:
-                        st.info("Aucune discussion pour le moment. Lancez la conversation !")
-
-                    st.markdown("---")
-                    
-                    # Formulaire de message direct sans ressaisir le pseudo s'il est déjà connecté
-                    if not st.session_state.utilisateur_pseudo:
-                        st.warning("⚠️ Veuillez d'abord renseigner votre pseudo dans le menu latéral à gauche pour participer à la discussion.")
-                    else:
-                        with st.form(f"form_chat_{artisan_id}"):
-                            texte_msg = st.text_input("Votre message direct...", placeholder="Écrivez votre message ici...")
-                            btn_envoyer_chat = st.form_submit_button("Envoyer le message 🚀", type="primary")
-
-                            if btn_envoyer_chat:
-                                if texte_msg.strip():
-                                    envoyer_message(artisan_id, st.session_state.utilisateur_pseudo, texte_msg.strip())
-                                    st.success("Message envoyé !")
-                                    st.rerun()
-                                else:
-                                    st.error("Le message ne peut pas être vide.")
 
                 texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
                 st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
