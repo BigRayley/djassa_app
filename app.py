@@ -15,28 +15,22 @@ except FileNotFoundError:
     artisans = []
 
 # --- SECURITE ADMIN CACHEE PAR URL ---
-# On vérifie si l'URL contient ton paramètre secret (ex: tonapp.streamlit.app/?admin=moncode2026)
 params = st.query_params
 est_admin = params.get("admin") == "djassa_admin_secret_2026"
 
-# Liste des menus dynamiques (l'admin n'apparaît que pour toi via l'URL secrète)
 options_menu = ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement"]
 if est_admin:
     options_menu.append("⚙️ Administration")
 
-# Menu de navigation
 menu = st.sidebar.selectbox("Navigation", options_menu)
 
 if menu == "🔍 Rechercher un prestataire":
     st.subheader("Espace de recherche")
     
-    # Compteur dynamique
     st.info(f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
-    # Recherche textuelle classique
-    metier_cherche = st.text_input("Métier ou secteur recherché (ex: Plombier, Hôtel Résidence, Maquis)")
+    metier_cherche = st.text_input("Métier ou secteur recherché (ex: Plombier, Hôtel, Livreur)")
     
-    # Filtres rapides par commune en un clic
     st.write("**Ou filtrez rapidement par commune :**")
     cols_communes = st.columns(4)
     commune_selectionnee = ""
@@ -47,7 +41,6 @@ if menu == "🔍 Rechercher un prestataire":
             if st.button(com, use_container_width=True):
                 commune_selectionnee = com
 
-    # Champ texte pour la commune (pré-rempli si un bouton rapide est cliqué)
     commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon)", value=commune_selectionnee)
 
     if st.button("Lancer la recherche", type="primary"):
@@ -62,12 +55,21 @@ if menu == "🔍 Rechercher un prestataire":
         if resultats:
             st.success(f"{len(resultats)} prestataire(s) trouvé(s) !")
             for artisan in resultats:
+                # Récupération sécurisée des nouveaux champs (badge et description par défaut si absents)
+                badge = artisan.get('badge', '⭐ Professionnel')
+                description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
+                
+                # Design de carte moderne et stylisé avec badges et descriptions
                 with st.container():
                     st.markdown(
                         f"""
-                        <div style="padding: 20px; border-radius: 10px; border: 1px solid #e0e0e0; margin-bottom: 15px; background-color: #1e1e1e;">
-                            <h3 style="margin: 0; color: #ffffff;">{artisan['nom']}</h3>
-                            <p style="margin: 5px 0; color: #b0b0b0;"><strong>Métier:</strong> {artisan['metier']} | <strong>Commune:</strong> {artisan['commune']}</p>
+                        <div style="padding: 20px; border-radius: 10px; border: 1px solid #333333; margin-bottom: 10px; background-color: #1e1e1e;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="margin: 0; color: #3b82f6;">{artisan['nom']}</h3>
+                                <span style="background-color: #d97706; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">{badge}</span>
+                            </div>
+                            <p style="margin: 8px 0 5px 0; color: #e5e7eb;"><strong>{artisan['metier']}</strong> - 📍 {artisan['commune']}</p>
+                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 14px;">{description}</p>
                         </div>
                         """,
                         unsafe_allow_html=True
@@ -75,18 +77,16 @@ if menu == "🔍 Rechercher un prestataire":
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#4CAF50; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 Appeler</button></a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">💬 Chat DJASSA</button></a>', unsafe_allow_html=True)
                 with col2:
-                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#25D366; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">💬 WhatsApp</button></a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟩 WhatsApp Direct</button></a>', unsafe_allow_html=True)
                 
-                # Bouton de partage individuel du prestataire sur WhatsApp
                 texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
-                st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#128C7E; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
+                st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
         else:
             st.warning("Aucun prestataire trouvé pour ces critères.")
             
-    # Section À la une / Récemment ajoutés
     st.markdown("---")
     st.subheader("🌟 Récemment ajoutés sur la plateforme")
     if artisans:
@@ -103,6 +103,8 @@ elif menu == "📝 Enregistrer un établissement":
         nom = st.text_input("Nom de l'établissement ou de l'artisan")
         metier = st.text_input("Métier ou secteur (ex: Plombier, Hôtel Résidence, Maquis Bar)")
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
+        description = st.text_area("Courte description des services proposés")
+        badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
         telephone = st.text_input("Numéro de téléphone (ex: +2250102030405)")
         
         submit_button = st.form_submit_button("Enregistrer l'établissement", type="primary")
@@ -111,9 +113,10 @@ elif menu == "📝 Enregistrer un établissement":
             nom = nom.strip()
             metier = metier.strip()
             commune = commune.strip()
+            description = description.strip()
             telephone = telephone.strip()
             
-            if not nom or not metier or not commune or not telephone:
+            if not nom or not metier or not commune or not description or not telephone:
                 st.error("⚠️ Tous les champs du formulaire doivent être remplis.")
             elif len(telephone) < 8:
                 st.error("⚠️ Le numéro de téléphone est trop court pour être valide.")
@@ -122,6 +125,8 @@ elif menu == "📝 Enregistrer un établissement":
                     "nom": nom,
                     "metier": metier,
                     "commune": commune,
+                    "description": description,
+                    "badge": badge,
                     "appel_url": f"tel:{telephone}",
                     "whatsapp_url": f"https://wa.me/{telephone.replace('+', '').replace(' ', '')}"
                 }
@@ -130,7 +135,7 @@ elif menu == "📝 Enregistrer un établissement":
                 with open("data.json", "w", encoding="utf-8") as f:
                     json.dump(artisans, f, ensure_ascii=False, indent=2)
                 
-                st.success("🎉 Établissement enregistré avec succès et validé !")
+                st.success("🎉 Établissement enregistré avec succès et mis en page !")
 
 elif menu == "⚙️ Administration" and est_admin:
     st.subheader("🔐 Espace Administrateur Privé")

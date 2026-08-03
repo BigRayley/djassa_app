@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>DJASSA - Administration & Modération</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #1e1e1e; color: #f4f4f9; padding: 20px; margin: 0; }
+        
+        #page-recherche { max-width: 850px; margin: auto; }
+        .header-djassa { color: white; display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .flag { width: 25px; height: 15px; background: linear-gradient(to right, #f77f00 33%, #ffffff 33%, #ffffff 66%, #00a859 66%); border-radius: 2px; }
+        
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 10px; flex-wrap: wrap; }
+        .tab-btn { background: #333; color: white; border: none; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .tab-btn.actif { background: #007bff; }
+        .tab-btn.admin { background: #dc3545; }
+
+        .search-input { width: 100%; padding: 12px; border-radius: 5px; border: none; margin-bottom: 15px; background: #333; color: white; font-size: 1em; box-sizing: border-box; }
+        .communes-filters { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .commune-btn { background: #333; color: white; border: 1px solid #555; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+        .commune-btn.actif { background: #007bff; border-color: #007bff; }
+        
+        .result-card { background: #2a2a2a; border: 1px solid #444; padding: 15px; border-radius: 6px; margin-bottom: 12px; }
+        .card-actions { display: flex; gap: 10px; margin-top: 12px; }
+        
+        .btn-action { border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-chat { background: #007bff; color: white; }
+        .btn-whatsapp { background: #25D366; color: white; }
+        
+        .form-section { background: #2a2a2a; padding: 20px; border-radius: 6px; display: none; }
+        .form-section input, .form-section select, .form-section textarea { width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px; background: #333; color: white; border: 1px solid #555; border-radius: 4px; box-sizing: border-box; }
+        
+        /* ADMIN PANEL */
+        .admin-card { background: #282a36; border: 1px solid #ff79c6; padding: 15px; border-radius: 6px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .stat-box { display: inline-block; background: #007bff; padding: 15px 25px; border-radius: 6px; font-size: 1.2em; font-weight: bold; margin-bottom: 20px; }
+        .btn-supprimer { background: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-valider { background: #28a745; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        /* CHAT */
+        #page-chat { max-width: 650px; margin: auto; display: none; background: #f4f4f9; color: #333; padding: 20px; border-radius: 8px; }
+        .retour-btn { background: #6c757d; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-bottom: 15px; }
+        #chat-box { width: 100%; height: 220px; background: white; border: 1px solid #ccc; overflow-y: scroll; padding: 10px; margin-top: 10px; margin-bottom: 10px; box-sizing: border-box; }
+        input[type="text"].msg-input { width: 55%; padding: 8px; }
+        input[type="file"] { display: none; }
+        .file-upload-btn { background: #6c757d; color: white; padding: 8px 12px; cursor: pointer; display: inline-block; border-radius: 4px; }
+        button.send-btn { background: #28a745; color: white; border: none; padding: 8px 15px; cursor: pointer; }
+        
+        .badge { background: #ffc107; color: #333; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; }
+        .badge-pro { background: #17a2b8; color: white; }
+    </style>
+</head>
+<body>
+
+    <div id="page-recherche">
+        <div class="header-djassa">
+            <div class="flag"></div>
+            <h1 style="margin: 0;">DJASSA</h1>
+        </div>
+        <p>La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.</p>
+        
+        <div class="nav-tabs">
+            <button class="tab-btn actif" id="tab-recherche" onclick="afficherOnglet('recherche')">🔍 Rechercher un prestataire</button>
+            <button class="tab-btn" id="tab-enregistrer" onclick="afficherOnglet('enregistrer')">📝 Enregistrer un établissement</button>
+            <button class="tab-btn admin" id="tab-admin" onclick="afficherOnglet('admin')">⚙️ Administration & Modération</button>
+        </div>
+
+        <!-- VUE RECHERCHE -->
+        <div id="vue-recherche">
+            <h3>Espace de recherche</h3>
+            <input type="text" id="searchInput" class="search-input" placeholder="Métier ou secteur (ex: Plombier, Hôtel, Maquis)..." onkeyup="lancerRecherche()">
+            
+            <p style="margin-bottom: 5px;">Ou filtrez rapidement par commune :</p>
+            <div class="communes-filters">
+                <button class="commune-btn actif" onclick="filtrerCommune('', this)">Toutes</button>
+                <button class="commune-btn" onclick="filtrerCommune('Cocody', this)">Cocody</button>
+                <button class="commune-btn" onclick="filtrerCommune('Yopougon', this)">Yopougon</button>
+                <button class="commune-btn" onclick="filtrerCommune('Marcory', this)">Marcory</button>
+                <button class="commune-btn" onclick="filtrerCommune('Plateau', this)">Plateau</button>
+            </div>
+
+            <div id="resultatsRecherche"></div>
+        </div>
+
+        <!-- VUE ENREGISTREMENT -->
+        <div id="vue-enregistrer" class="form-section">
+            <h3>Ajouter votre établissement / service sur DJASSA</h3>
+            <label>Nom de l'établissement :</label>
+            <input type="text" id="addNom" placeholder="ex: Pressing du Centre">
+            
+            <label>Secteur d'activité :</label>
+            <input type="text" id="addSecteur" placeholder="ex: Pressing, Coiffure">
+            
+            <label>Commune :</label>
+            <select id="addCommune">
+                <option value="Cocody">Cocody</option>
+                <option value="Yopougon">Yopougon</option>
+                <option value="Marcory">Marcory</option>
+                <option value="Plateau">Plateau</option>
+            </select>
+            
+            <label>Numéro WhatsApp :</label>
+            <input type="text" id="addWhatsapp" placeholder="2250700000000">
+            
+            <button class="btn-action btn-chat" style="width: 100%; padding: 12px; margin-top: 10px;" onclick="soumettrePrestataire()">Enregistrer sur DJASSA</button>
+        </div>
+
+        <!-- VUE ADMINISTRATION ET MODERATION -->
+        <div id="vue-admin" class="form-section">
+            <h3>🔐 Administration & Modération DJASSA</h3>
+            <div id="zone-connexion-admin">
+                <label>Code Secret Admin :</label>
+                <input type="password" id="inputSecretAdmin" placeholder="Entrez la clé secrète...">
+                <button class="btn-action btn-chat" style="width: 100%;" onclick="connexionAdmin()">Se connecter au Dashboard</button>
+            </div>
+
+            <div id="zone-contenu-admin" style="display: none;">
+                <div class="stat-box">📊 Total Établissements : <span id="statTotal">0</span></div>
+                
+                <h4>Gestion, Attribut de Badges & Suppression des Faux Profils :</h4>
+                <div id="listeAdminPrestataires"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHAT INTERNE -->
+    <div id="page-chat">
+        <button class="retour-btn" onclick="fermerChat()">← Retour aux résultats</button>
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <div><span style="height: 10px; width: 10px; background-color: #28a745; border-radius: 50%; display: inline-block;"></span> <strong id="nomPrestataireChat">Prestataire</strong> (En ligne)</div>
+            <div id="badgeContainer"></div>
+        </div>
+
+        <div id="chat-box"></div>
+        
+        <input type="text" id="messageInput" class="msg-input" placeholder="Écris ton message...">
+        <label for="photoInput" class="file-upload-btn">📷 Photo</label>
+        <input type="file" id="photoInput" accept="image/*">
+        <button class="send-btn" onclick="envoyerMessageSimule()">Envoyer</button>
+    </div>
+
+    <script>
+        let communeSelectionnee = '';
+        let secretAdminActuel = '';
+
+        window.onload = function() {
+            lancerRecherche();
+        };
+
+        function afficherOnglet(nom) {
+            document.getElementById('tab-recherche').classList.remove('actif');
+            document.getElementById('tab-enregistrer').classList.remove('actif');
+            document.getElementById('tab-admin').classList.remove('actif');
+            
+            document.getElementById('vue-recherche').style.display = 'none';
+            document.getElementById('vue-enregistrer').style.display = 'none';
+            document.getElementById('vue-admin').style.display = 'none';
+
+            if(nom === 'recherche') {
+                document.getElementById('tab-recherche').classList.add('actif');
+                document.getElementById('vue-recherche').style.display = 'block';
+                lancerRecherche();
+            } else if(nom === 'enregistrer') {
+                document.getElementById('tab-enregistrer').classList.add('actif');
+                document.getElementById('vue-enregistrer').style.display = 'block';
+            } else if(nom === 'admin') {
+                document.getElementById('tab-admin').classList.add('actif');
+                document.getElementById('vue-admin').style.display = 'block';
+            }
+        }
+
+        function connexionAdmin() {
+            secretAdminActuel = document.getElementById('inputSecretAdmin').value;
+            chargerDashboardAdmin();
+        }
+
+        function chargerDashboardAdmin() {
+            fetch('/api/admin_stats', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secret: secretAdminActuel })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.statut === "succes") {
+                    document.getElementById('zone-connexion-admin').style.display = 'none';
+                    document.getElementById('zone-contenu-admin').style.display = 'block';
+                    document.getElementById('statTotal').innerText = data.total_prestataires;
+
+                    const conteneur = document.getElementById('listeAdminPrestataires');
+                    conteneur.innerHTML = '';
+                    data.prestataires.forEach(p => {
+                        conteneur.innerHTML += `
+                            <div class="admin-card">
+                                <div>
+                                    <strong>#${p.id} - ${p.nom}</strong> (${p.secteur} - ${p.commune})<br>
+                                    <small style="color: #aaa;">WhatsApp: ${p.whatsapp} | Badge actuel : <b>${p.badge}</b></small>
+                                </div>
+                                <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                                    <select id="select-badge-${p.id}" style="padding: 5px; background: #222; color: white; border: 1px solid #555;">
+                                        <option value="⭐ Top Vendeur" ${p.badge === '⭐ Top Vendeur' ? 'selected' : ''}>⭐ Top Vendeur</option>
+                                        <option value="🚚 Livreur Pro" ${p.badge === '🚚 Livreur Pro' ? 'selected' : ''}>🚚 Livreur Pro</option>
+                                        <option value="Vérifié" ${p.badge === 'Vérifié' ? 'selected' : ''}>Vérifié</option>
+                                        <option value="Standard" ${p.badge === 'Standard' ? 'selected' : ''}>Standard</option>
+                                    </select>
+                                    <button class="btn-valider" onclick="changerBadge(${p.id})">Valider Badge</button>
+                                    <button class="btn-supprimer" onclick="supprimerProfil(${p.id})">🗑️ Supprimer (Faux profil)</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    alert(data.message);
+                }
+            });
+        }
+
+        function changerBadge(id) {
+            const nouveauBadge = document.getElementById(`select-badge-${id}`).value;
+            fetch('/api/admin_badge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secret: secretAdminActuel, id: id, badge: nouveauBadge })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.statut === "succes") {
+                    alert("Badge mis à jour avec succès !");
+                    chargerDashboardAdmin();
+                } else {
+                    alert("Erreur lors de la mise à jour.");
+                }
+            });
+        }
+
+        function supprimerProfil(id) {
+            if(confirm("Êtes-vous sûr de vouloir supprimer définitivement ce profil frauduleux ?")) {
+                fetch('/api/admin_supprimer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ secret: secretAdminActuel, id: id })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if(data.statut === "succes") {
+                        alert("Profil frauduleux supprimé de la plateforme !");
+                        chargerDashboardAdmin();
+                    }
+                });
+            }
+        }
+
+        function filtrerCommune(commune, btnElement) {
+            communeSelectionnee = commune;
+            document.querySelectorAll('.commune-btn').forEach(btn => btn.classList.remove('actif'));
+            btnElement.classList.add('actif');
+            lancerRecherche();
+        }
+
+        function lancerRecherche() {
+            const motCle = document.getElementById('searchInput').value;
+            fetch('/recherche', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mot_cle: motCle, commune: communeSelectionnee })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const conteneur = document.getElementById('resultatsRecherche');
+                conteneur.innerHTML = '';
+                data.resultats.forEach(p => {
+                    const typeBadge = p.type === 'livreur' ? 'badge badge-pro' : 'badge';
+                    const linkWhatsapp = `https://wa.me/${p.whatsapp}?text=Bonjour%20${encodeURIComponent(p.nom)},%20je%20vous%20contacte%20depuis%20DJASSA.`;
+                    
+                    conteneur.innerHTML += `
+                        <div class="result-card">
+                            <h3 style="margin: 0; color: #007bff;">${p.nom} <span class="${typeBadge}">${p.badge}</span></h3>
+                            <p style="margin: 5px 0; color: #ccc;">${p.secteur} - 📍 ${p.commune}</p>
+                            <p style="font-size: 0.85em; color: #aaa; margin-bottom: 10px;">${p.description || ''}</p>
+                            
+                            <div class="card-actions">
+                                <button class="btn-action btn-chat" onclick='ouvrirChat(${JSON.stringify(p)})'>💬 Chat DJASSA</button>
+                                <a href="${linkWhatsapp}" target="_blank" class="btn-action btn-whatsapp">📱 WhatsApp Direct</a>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+        }
+
+        function soumettrePrestataire() {
+            const nom = document.getElementById('addNom').value;
+            const secteur = document.getElementById('addSecteur').value;
+            const commune = document.getElementById('addCommune').value;
+            const whatsapp = document.getElementById('addWhatsapp').value;
+
+            if(!nom || !secteur || !whatsapp) { alert("Veuillez tout remplir !"); return; }
+
+            fetch('/enregistrer_prestataire', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nom, secteur, commune, whatsapp })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert("Établissement enregistré avec succès !");
+                afficherOnglet('recherche');
+            });
+        }
+
+        function ouvrirChat(p) {
+            document.getElementById('page-recherche').style.display = 'none';
+            document.getElementById('page-chat').style.display = 'block';
+            document.getElementById('nomPrestataireChat').innerText = p.nom;
+            const typeBadge = p.type === 'livreur' ? 'badge badge-pro' : 'badge';
+            document.getElementById('badgeContainer').innerHTML = `<span class="${typeBadge}">${p.badge}</span>`;
+            document.getElementById('chat-box').innerHTML = `<p style="text-align:center; color:#888; font-size:0.9em;">Début du Chat DJASSA avec ${p.nom}</p>`;
+        }
+
+        function fermerChat() {
+            document.getElementById('page-recherche').style.display = 'block';
+            document.getElementById('page-chat').style.display = 'none';
+        }
+
+        function envoyerMessageSimule() {
+            const input = document.getElementById('messageInput');
+            const texte = input.value.trim();
+            if(texte !== "") {
+                const chatBox = document.getElementById('chat-box');
+                chatBox.innerHTML += `<p><b>Moi :</b> ${texte} <span style="color:#007bff; font-size:0.8em;">✓✓ Lu</span></p>`;
+                input.value = "";
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>
