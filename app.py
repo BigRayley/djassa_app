@@ -15,11 +15,10 @@ except FileNotFoundError:
 params = st.query_params
 est_admin = params.get("admin") == "djassa_admin_secret_2026"
 
-# En-tête principal et Navigation horizontale moderne (inspirée de l'Écran 1)
+# En-tête principal et Navigation horizontale moderne
 st.title("🇨🇮 DJASSA")
 st.write("La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.")
 
-# Création des onglets de navigation dynamiques
 if est_admin:
     choix_menu = st.radio("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement", "⚙️ Administration & Modération"], horizontal=True)
 else:
@@ -32,8 +31,23 @@ if choix_menu == "🔍 Rechercher un prestataire":
     
     st.info(f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
-    metier_cherche = st.text_input("Métier ou secteur recherché (ex: Plombier, Hôtel, Livreur)")
+    # Extraction dynamique des métiers uniques enregistrés pour les suggestions
+    metiers_disponibles = sorted(list(set(artisan['metier'] for artisan in artisans)))
     
+    # Filtres rapides par métier en un clic si des métiers existent
+    metier_selectionne = ""
+    if metiers_disponibles:
+        st.write("**Suggestions de métiers populaires :**")
+        cols_metiers = st.columns(min(len(metiers_disponibles), 4))
+        for i, met in enumerate(metiers_disponibles[:4]):
+            with cols_metiers[i]:
+                if st.button(met, use_container_width=True, key=f"btn_met_{i}"):
+                    metier_selectionne = met
+
+    # Champ texte pour le métier (pré-rempli si un bouton de suggestion est cliqué)
+    metier_cherche = st.text_input("Métier ou secteur recherché (ex: Plombier, Hôtel, Livreur)", value=metier_selectionne)
+    
+    # Filtres rapides par commune en un clic
     st.write("**Ou filtrez rapidement par commune :**")
     cols_communes = st.columns(4)
     commune_selectionnee = ""
@@ -41,7 +55,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
     communes_populaires = ["Cocody", "Yopougon", "Marcory", "Plateau"]
     for i, com in enumerate(communes_populaires):
         with cols_communes[i]:
-            if st.button(com, use_container_width=True):
+            if st.button(com, use_container_width=True, key=f"btn_com_{i}"):
                 commune_selectionnee = com
 
     commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon)", value=commune_selectionnee)
@@ -61,7 +75,6 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 badge = artisan.get('badge', '⭐ Professionnel')
                 description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
                 
-                # Design de carte moderne avec badges et descriptions
                 with st.container():
                     st.markdown(
                         f"""
@@ -137,7 +150,7 @@ elif choix_menu == "📝 Enregistrer un établissement":
                 with open("data.json", "w", encoding="utf-8") as f:
                     json.dump(artisans, f, ensure_ascii=False, indent=2)
                 
-                st.success("🎉 Établissement enregistré avec succès et mis en page !")
+                st.success("🎉 Établissement enregistré avec succès !")
 
 elif choix_menu == "⚙️ Administration & Modération" and est_admin:
     st.subheader("🔒 Administration & Modération DJASSA")
