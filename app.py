@@ -31,35 +31,34 @@ if choix_menu == "🔍 Rechercher un prestataire":
     
     st.info(f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
+    # --- NOUVEAU : Recherche directe par nom de service / établissement ---
+    recherche_nom = st.text_input("🔍 Rechercher directement un nom d'établissement ou de service (ex: Chez Paul)", placeholder="Ex: Chez Paul, Maquis...")
+
+    st.markdown("---")
+    st.write("Ou utilisez les filtres par secteur :")
+    
     # Extraction et séparation intelligente des secteurs/métiers uniques
     metiers_bruts = set()
     for artisan in artisans:
         metier_text = artisan.get('metier', '')
-        # Si le texte contient des séparateurs comme "et", "&", ou des espaces multiples, on peut éclater ou garder propre
-        # Ici, on nettoie et on ajoute chaque mot clé pertinent ou le métier complet séparé
         for mot in metier_text.replace(" & ", " ").replace(" et ", " ").split():
-            if len(mot) > 2: # Ignore les petits mots de liaison
+            if len(mot) > 2:
                 metiers_bruts.add(mot.capitalize())
-        # On garde aussi le métier complet d'origine
         metiers_bruts.add(metier_text)
 
     metiers_disponibles = sorted(list(metiers_bruts))
     
-    # Filtres rapides par secteur en un clic
     metier_selectionne = ""
     if metiers_disponibles:
-        st.write("**Suggestions par secteur :**")
         cols_metiers = st.columns(min(len(metiers_disponibles), 4))
         for i, met in enumerate(metiers_disponibles[:4]):
             with cols_metiers[i]:
                 if st.button(met, use_container_width=True, key=f"btn_met_{i}"):
                     metier_selectionne = met
 
-    # Champ texte pour le métier (pré-rempli si un bouton de suggestion est cliqué)
-    metier_cherche = st.text_input("Métier ou secteur recherché (ex: Hôtel, Résidence, Plombier)", value=metier_selectionne)
+    metier_cherche = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)", value=metier_selectionne)
     
-    # Filtres rapides par commune en un clic
-    st.write("**Ou filtrez rapidement par commune :**")
+    st.write("Ou filtrez par commune :")
     cols_communes = st.columns(4)
     commune_selectionnee = ""
     
@@ -74,14 +73,23 @@ if choix_menu == "🔍 Rechercher un prestataire":
     if st.button("Lancer la recherche", type="primary"):
         resultats = []
         for artisan in artisans:
+            # Si l'utilisateur tape un nom spécifique, on filtre en priorité sur le nom
+            nom_match = recherche_nom.lower() in artisan['nom'].lower() if recherche_nom else True
+            
+            # Sinon on regarde les critères classiques métier et commune
             metier_match = metier_cherche.lower() in artisan['metier'].lower() if metier_cherche else True
             commune_match = commune_cherche.lower() in artisan['commune'].lower() if commune_cherche else True
             
-            if metier_match and commune_match:
-                resultats.append(artisan)
+            # Si une recherche par nom est active, elle prime, sinon on combine métier et commune
+            if recherche_nom:
+                if nom_match:
+                    resultats.append(artisan)
+            else:
+                if metier_match and commune_match:
+                    resultats.append(artisan)
 
         if resultats:
-            st.success(f"{len(resultats)} prestataire(s) trouvé(s) !")
+            st.success(f"{len(resultats)} prestataire(s) ou établissement(s) trouvé(s) !")
             for artisan in resultats:
                 badge = artisan.get('badge', '⭐ Professionnel')
                 description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
@@ -111,7 +119,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
         else:
-            st.warning("Aucun prestataire trouvé pour ces critères.")
+            st.warning("Aucun établissement trouvé pour cette recherche.")
             
     st.markdown("---")
     st.subheader("🌟 Récemment ajoutés sur la plateforme")
@@ -126,10 +134,10 @@ elif choix_menu == "📝 Enregistrer un établissement":
     st.subheader("Enregistrer un nouveau prestataire ou établissement")
     
     with st.form("form_enregistrement"):
-        nom = st.text_input("Nom de l'établissement ou de l'artisan")
-        metier = st.text_input("Métier ou secteur (ex: Hôtel, Résidence, Boulangerie, Plombier)")
+        nom = st.text_input("Nom de l'établissement ou de l'artisan (ex: Chez Paul)")
+        metier = st.text_input("Métier ou secteur (ex: Boulangerie, Hôtel, Résidence)")
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
-        description = st.text_area("Courte description des services proposés")
+        description = st.text_area("Courte description des services proposés (ex: Situé au Vallon)")
         badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
         telephone = st.text_input("Numéro de téléphone (ex: +2250102030405)")
         
