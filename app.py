@@ -35,7 +35,7 @@ st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
     
-    # --- INTERFACE D'APPEL STYLE WAVE IDENTIQUE (SANS BARRE ROUGE EN BAS) ---
+    # --- INTERFACE D'APPEL EXACTE MODE WAVE AVEC ICÔNE DE RÉDUCTION ET BOUTON ROUGE ---
     if st.session_state.appel_en_cours:
         nom_appele = st.session_state.appel_en_cours
         
@@ -99,7 +99,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    gap: 20px;
+                    gap: 22px;
                     margin-bottom: 10px;
                 }}
                 .control-btn {{
@@ -110,7 +110,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    font-size: 20px;
+                    font-size: 22px;
                     cursor: pointer;
                     transition: background 0.2s;
                 }}
@@ -148,7 +148,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
             </div>
 
             <div class="controls-bar">
-                <div class="control-btn" title="Options / Clavier" onclick="alert('Options du clavier')">⚙️</div>
+                <div class="control-btn" title="Réduire l'écran" onclick="alert('Réduire l’écran')">↙↗</div>
                 <div class="control-btn" title="Haut-parleur" onclick="alert('Haut-parleur activé')">🔊</div>
                 <div class="control-btn" title="Couper le micro" onclick="alert('Micro coupé')">🔇</div>
                 <div class="hangup-btn" title="Raccrocher" onclick="window.parent.document.getElementById('raccrocher_btn').click()">📞</div>
@@ -157,10 +157,10 @@ if choix_menu == "🔍 Rechercher un prestataire":
         </html>
         """
         
-        # Affichage du composant sans laisser de bouton Streamlit visible en dessous
+        # Affichage du composant d'appel épuré
         components.html(html_appel, height=480)
         
-        # Bouton invisible gérant la fin de l'appel
+        # Bouton invisible pour gérer la déconnexion via le bouton rouge
         if st.button("Raccrocher", key="raccrocher_btn", use_container_width=True):
             st.session_state.appel_en_cours = None
             st.rerun()
@@ -247,7 +247,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
                 
-                cle_appel = f"appel_wave_clean_final_{index_art}"
+                cle_appel = f"appel_wave_exact_final_{index_art}"
                 if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
                     st.session_state.appel_en_cours = artisan['nom']
                     st.rerun()
@@ -263,7 +263,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
     if artisans:
         derniers = artisans[-3:]
         for art in reversed(derniers):
-            st.markdown(f"- **{art['nom']}** ({art['metier']}) à *{art['commune']}*")
+            st.markdown(f"- **{art['nom']}** ({artisan['metier']}) à *{artisan['commune']}*")
     else:
         st.write("Aucun établissement pour le moment.")
 
