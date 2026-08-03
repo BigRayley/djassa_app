@@ -1,14 +1,14 @@
 import urllib.parse
 import streamlit as st
 import streamlit.components.v1 as components
-from database import get_connection, init_db, rechercher_artisans_intelligent, ajouter_avis, obtenir_avis
+from database import get_connection, init_db, rechercher_artisans_intelligent, ajouter_avis, obtenir_avis, envoyer_message, obtenir_messages
 
 # Initialisation de la base de données SQLite
 init_db()
 
 st.set_page_config(page_title="DJASSA - Bêta", page_icon="🇨🇮", layout="centered")
 
-# Chargement de tous les prestataires (avec l'ID pour les avis)
+# Chargement de tous les prestataires (avec l'ID)
 def charger_tous_artisans():
     conn = get_connection()
     cursor = conn.cursor()
@@ -148,10 +148,10 @@ if choix_menu == "🔍 Rechercher un prestataire":
     st.subheader("Espace de recherche")
     st.info(f"🔥 Déjà **{len(tous_artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
-    # --- 1. RECHERCHE DIRECTE PAR NOM ---
+    # 1. Recherche par nom
     st.markdown("### 🎯 Recherche directe par nom d'établissement")
     with st.form("form_recherche_nom"):
-        recherche_nom = st.text_input("Tapez le nom recherché (ex: Chez Paul)", placeholder="Ex: Chez Paul...")
+        recherche_nom = st.text_input("Tapez le nom recherché (ex: Kelo Kelo)", placeholder="Ex: Kelo Kelo...")
         lancer_recherche_nom = st.form_submit_button("Rechercher par nom", type="primary")
 
     if lancer_recherche_nom and recherche_nom.strip():
@@ -159,7 +159,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
 
     st.markdown("---")
     
-    # --- 2. RECHERCHE PAR SECTEUR ET COMMUNE ---
+    # 2. Recherche par secteur et commune
     st.markdown("### 🔍 Ou filtrez par secteur et commune")
     
     metiers_bruts = set()
@@ -180,7 +180,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
     communes_disponibles = ["Toutes les communes"] + sorted(list(set(art['commune'] for art in tous_artisans if art['commune'])))
 
     with st.form("form_recherche_criteres"):
-        metier_cherche = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
+        metier_cherche = st.text_input("Métier ou secteur (ex: Bar, Boulangerie)")
         commune_selectionnee = st.selectbox("📍 Filtrer par commune", communes_disponibles)
         lancer_recherche_criteres = st.form_submit_button("Lancer la recherche par critères", type="primary")
 
@@ -198,7 +198,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
                 telephone_brut = artisan.get('appel_url', 'tel:+22500000000').replace('tel:', '')
                 
-                # Récupération et calcul des avis
+                # Gestion des avis
                 avis_artisan = obtenir_avis(artisan_id)
                 moyenne = calculer_moyenne_avis(avis_artisan)
                 nb_avis = len(avis_artisan)
@@ -231,7 +231,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                     st.session_state.appel_en_cours = artisan['nom']
                     st.rerun()
 
-                # Menu déroulant pour lire et laisser un avis
+                # --- MENU DÉROULANT : AVIS & NOTES ---
                 with st.expander(f"⭐ Voir ou laisser un avis pour {artisan['nom']}"):
                     if nb_avis > 0:
                         for avis in avis_artisan:
@@ -249,6 +249,29 @@ if choix_menu == "🔍 Rechercher un prestataire":
                             ajouter_avis(artisan_id, note_donnee, comm_donne.strip())
                             st.success("Merci ! Votre avis a été enregistré.")
                             st.rerun()
+
+                # --- NOUVEAU MENU DÉROULANT : MESSAGERIE INTERNE ---
+                messages_artisan = obtenir_messages(artisan_id)
+                with st.expander(f"💬 Envoyer un message direct à {artisan['nom']} ({len(messages_artisan)} messages)"):
+                    if messages_artisan:
+                        for msg in messages_artisan:
+                            st.markdown(f"💬 **{msg['expediteur']}** : {msg['contenu']} <br><span style='font-size:11px; color:gray;'>({msg['date_envoi']})</span>", unsafe_allow_html=True)
+                            st.markdown("---")
+                    else:
+                        st.write("Aucun message pour l'instant. Envoyez le premier !")
+
+                    with st.form(f"form_msg_{artisan_id}"):
+                        nom_exp = st.text_input("Votre nom ou pseudo")
+                        texte_msg = st.text_area("Votre message")
+                        btn_msg = st.form_submit_button("Envoyer le message", type="primary")
+
+                        if btn_msg:
+                            if nom_exp.strip() and texte_msg.strip():
+                                envoyer_message(artisan_id, nom_exp.strip(), texte_msg.strip())
+                                st.success("Message envoyé avec succès !")
+                                st.rerun()
+                            else:
+                                st.error("Veuillez remplir votre nom et le message.")
 
                 texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
                 st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
@@ -269,10 +292,10 @@ elif choix_menu == "📝 Enregistrer un établissement":
     st.subheader("Enregistrer un nouveau prestataire ou établissement")
     
     with st.form("form_enregistrement"):
-        nom = st.text_input("Nom de l'établissement ou de l'artisan (ex: Chez Paul)")
-        metier = st.text_input("Métier ou secteur (ex: Boulangerie, Hôtel, Résidence)")
+        nom = st.text_input("Nom de l'établissement ou de l'artisan (ex: Kelo Kelo)")
+        metier = st.text_input("Métier ou secteur (ex: Bar, Boulangerie, Hôtel)")
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
-        description = st.text_area("Courte description des services proposés (ex: Situé au Vallon)")
+        description = st.text_area("Courte description des services proposés (ex: Situé à Cocody)")
         badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
         telephone = st.text_input("Numéro de téléphone (ex: +2250102030405)")
         
