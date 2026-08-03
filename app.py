@@ -34,7 +34,7 @@ st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
     
-    # --- INTERFACE D'APPEL AUX COULEURS DE DJASSA ---
+    # --- INTERFACE D'APPEL COMPLÈTE TYPE WAVE ---
     if st.session_state.appel_en_cours:
         nom_appele = st.session_state.appel_en_cours
         
@@ -56,7 +56,20 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 unsafe_allow_html=True
             )
         
-        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        
+        # Barre de contrôle interactive (Haut-parleur, Micro, etc.)
+        st.markdown(
+            """
+            <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+                <div style="background-color: #e2e8f0; width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 22px; cursor: pointer;" title="Couper le micro">🎙️</div>
+                <div style="background-color: #e2e8f0; width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 22px; cursor: pointer;" title="Haut-parleur">🔊</div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Bouton rouge pour raccrocher
         col_btn = st.columns([1, 2, 1])
         with col_btn[1]:
             if st.button("🔴 Raccrocher l'appel", type="primary", use_container_width=True):
@@ -161,7 +174,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
     if artisans:
         derniers = artisans[-3:]
         for art in reversed(derniers):
-            st.markdown(f"- **{art['nom']}** ({artisan['metier']}) à *{art['commune']}*")
+            st.markdown(f"- **{art['nom']}** ({art['metier']}) à *{art['commune']}*")
     else:
         st.write("Aucun établissement pour le moment.")
 
@@ -170,7 +183,7 @@ elif choix_menu == "📝 Enregistrer un établissement":
     
     with st.form("form_enregistrement"):
         nom = st.text_input("Nom de l'établissement ou de l'artisan (ex: Chez Paul)")
-        metier = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
+        metier = st.text_input("Métier ou secteur (ex: Boulangerie, Hôtel, Résidence)")
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
         description = st.text_area("Courte description des services proposés (ex: Situé au Vallon)")
         badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
