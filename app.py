@@ -10,78 +10,58 @@ st.set_page_config(page_title="DJASSA - Bêta", page_icon="🇨🇮", layout="ce
 
 # Chargement des prestataires depuis SQLite
 def charger_artisans():
-  conn = get_connection()
-  cursor = conn.cursor()
-  cursor.execute(
-      "SELECT nom, metier, commune, description, badge, appel_url, whatsapp_url"
-      " FROM artisans"
-  )
-  lignes = cursor.fetchall()
-  conn.close()
-  return [
-      {
-          "nom": r[0],
-          "metier": r[1],
-          "commune": r[2],
-          "description": r[3],
-          "badge": r[4],
-          "appel_url": r[5],
-          "whatsapp_url": r[6],
-      }
-      for r in lignes
-  ]
-
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT nom, metier, commune, description, badge, appel_url, whatsapp_url FROM artisans")
+    lignes = cursor.fetchall()
+    conn.close()
+    return [
+        {
+            "nom": r[0],
+            "metier": r[1],
+            "commune": r[2],
+            "description": r[3],
+            "badge": r[4],
+            "appel_url": r[5],
+            "whatsapp_url": r[6]
+        } for r in lignes
+    ]
 
 artisans = charger_artisans()
 
 # Initialisation de la session
 if "resultats_recherche" not in st.session_state:
-  st.session_state.resultats_recherche = None
+    st.session_state.resultats_recherche = None
 if "appel_en_cours" not in st.session_state:
-  st.session_state.appel_en_cours = None
+    st.session_state.appel_en_cours = None
 
 # --- GESTION DE LA FIN D'APPEL DEPUIS LE BOUTON ROUGE ---
 params = st.query_params
 if "raccrocher" in params:
-  st.session_state.appel_en_cours = None
-  st.query_params.clear()
-  st.rerun()
+    st.session_state.appel_en_cours = None
+    st.query_params.clear()
+    st.rerun()
 
 est_admin = params.get("admin") == "djassa_admin_secret_2026"
 
 # En-tête principal et Navigation
 st.title("🇨🇮 DJASSA")
-st.write(
-    "La plateforme de référence pour trouver les meilleurs prestataires et"
-    " services en Côte d'Ivoire."
-)
+st.write("La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.")
 
 if est_admin:
-  choix_menu = st.radio(
-      "Navigation",
-      [
-          "🔍 Rechercher un prestataire",
-          "📝 Enregistrer un établissement",
-          "⚙️ Administration & Modération",
-      ],
-      horizontal=True,
-  )
+    choix_menu = st.radio("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement", "⚙️ Administration & Modération"], horizontal=True)
 else:
-  choix_menu = st.radio(
-      "Navigation",
-      ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement"],
-      horizontal=True,
-  )
+    choix_menu = st.radio("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement"], horizontal=True)
 
 st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
-
-  # --- INTERFACE D'APPEL 100% FONCTIONNELLE ---
-  if st.session_state.appel_en_cours:
-    nom_appele = st.session_state.appel_en_cours
-
-    html_appel = f"""
+    
+    # --- INTERFACE D'APPEL 100% FONCTIONNELLE ---
+    if st.session_state.appel_en_cours:
+        nom_appele = st.session_state.appel_en_cours
+        
+        html_appel = f"""
         <!DOCTYPE html>
         <html>
         <head>
@@ -239,102 +219,71 @@ if choix_menu == "🔍 Rechercher un prestataire":
         </body>
         </html>
         """
+        
+        components.html(html_appel, height=600, scrolling=False)
+        st.stop()
 
-    components.html(html_appel, height=600, scrolling=False)
-    st.stop()
+    # --- RECHERCHE ET LISTING CLASSIQUE ---
+    st.subheader("Espace de recherche")
+    st.info(f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
+    
+    st.markdown("### 🎯 Recherche directe par nom d'établissement")
+    with st.form("form_recherche_nom"):
+        recherche_nom = st.text_input("Tapez le nom recherché (ex: Chez Paul)", placeholder="Ex: Chez Paul...")
+        lancer_recherche_nom = st.form_submit_button("Rechercher par nom", type="primary")
 
-  # --- RECHERCHE ET LISTING CLASSIQUE ---
-  st.subheader("Espace de recherche")
-  st.info(
-      f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s)"
-      " répertoriés sur la plateforme !"
-  )
+    if lancer_recherche_nom and recherche_nom.strip():
+        st.session_state.resultats_recherche = [art for art in artisans if recherche_nom.strip().lower() in art['nom'].lower()]
 
-  st.markdown("### 🎯 Recherche directe par nom d'établissement")
-  with st.form("form_recherche_nom"):
-    recherche_nom = st.text_input(
-        "Tapez le nom recherché (ex: Chez Paul)",
-        placeholder="Ex: Chez Paul...",
-    )
-    lancer_recherche_nom = st.form_submit_button(
-        "Rechercher par nom", type="primary"
-    )
-
-  if lancer_recherche_nom and recherche_nom.strip():
-    st.session_state.resultats_recherche = [
-        art
-        for art in artisans
-        if recherche_nom.strip().lower() in art["nom"].lower()
-    ]
-
-  st.markdown("---")
-  st.markdown("### 🔍 Ou filtrez par secteur et commune")
-
-  metiers_bruts = set()
-  for artisan in artisans:
-    metier_text = artisan.get("metier", "")
-    for mot in (
-        metier_text.replace(" & ", " ").replace(" et ", " ").split()
-    ):
-      if len(mot) > 2:
-        metiers_bruts.add(mot.capitalize())
-    metiers_bruts.add(metier_text)
-
-  metiers_disponibles = sorted(list(metiers_bruts))
-
-  with st.form("form_recherche_criteres"):
-    metier_cherche = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
-    commune_cherche = st.text_input(
-        "Commune (ex: Cocody, Yopougon, Marcory, Plateau)"
-    )
-    lancer_recherche_criteres = st.form_submit_button(
-        "Lancer la recherche par critères", type="primary"
-    )
-
-  if metiers_disponibles:
-    st.write("💡 **Suggestions de secteurs populaires :**")
-    cols_metiers = st.columns(min(len(metiers_disponibles), 4))
-    for i, met in enumerate(metiers_disponibles[:4]):
-      with cols_metiers[i]:
-        if st.button(met, use_container_width=True, key=f"btn_met_{i}"):
-          metier_cherche = met
-          lancer_recherche_criteres = True
-
-  if lancer_recherche_criteres:
-    resultats_criteres = []
+    st.markdown("---")
+    st.markdown("### 🔍 Ou filtrez par secteur et commune")
+    
+    # Nettoyage et normalisation des secteurs pour éviter les doublons de casse (Coiffure / coiffure)
+    metiers_bruts = set()
     for artisan in artisans:
-      metier_match = (
-          metier_cherche.lower() in artisan["metier"].lower()
-          if metier_cherche
-          else True
-      )
-      commune_match = (
-          commune_cherche.lower() in artisan["commune"].lower()
-          if commune_cherche
-          else True
-      )
+        metier_text = artisan.get('metier', '').strip().capitalize()
+        if len(metier_text) > 2:
+            metiers_bruts.add(metier_text)
 
-      if metier_match and commune_match:
-        resultats_criteres.append(artisan)
+    metiers_disponibles = sorted(list(metiers_bruts))
+    
+    with st.form("form_recherche_criteres"):
+        metier_cherche = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
+        commune_cherche = st.text_input("Commune (ex: Cocody, Yopougon, Marcory, Plateau)")
+        lancer_recherche_criteres = st.form_submit_button("Lancer la recherche par critères", type="primary")
 
-    st.session_state.resultats_recherche = resultats_criteres
+    if metiers_disponibles:
+        st.write("💡 **Suggestions de secteurs populaires :**")
+        cols_metiers = st.columns(min(len(metiers_disponibles), 4))
+        for i, met in enumerate(metiers_disponibles[:4]):
+            with cols_metiers[i]:
+                if st.button(met, use_container_width=True, key=f"btn_met_{i}"):
+                    metier_cherche = met
+                    lancer_recherche_criteres = True
 
-  if st.session_state.resultats_recherche is not None:
-    resultats = st.session_state.resultats_recherche
-    if resultats:
-      st.success(f"🎉 {len(resultats)} établissement(s) ou prestataire(s) trouvé(s) !")
-      for index_art, artisan in enumerate(resultats):
-        badge = artisan.get("badge", "⭐ Professionnel")
-        description = artisan.get(
-            "description", "Prestataire de confiance disponible sur Abidjan."
-        )
-        telephone_brut = artisan.get("appel_url", "tel:+22500000000").replace(
-            "tel:", ""
-        )
+    if lancer_recherche_criteres:
+        resultats_criteres = []
+        for artisan in artisans:
+            metier_match = metier_cherche.lower() in artisan['metier'].lower() if metier_cherche else True
+            commune_match = commune_cherche.lower() in artisan['commune'].lower() if commune_cherche else True
+            
+            if metier_match and commune_match:
+                resultats_criteres.append(artisan)
+        
+        st.session_state.resultats_recherche = resultats_criteres
 
-        with st.container():
-          st.markdown(
-              f"""
+    if st.session_state.resultats_recherche is not None:
+        resultats = st.session_state.resultats_recherche
+        if resultats:
+            st.success(f"🎉 {len(resultats)} établissement(s) ou prestataire(s) trouvé(s) !")
+            for index_art, artisan in enumerate(resultats):
+                badge = artisan.get('badge', '⭐ Professionnel')
+                description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
+                telephone_brut = artisan.get('appel_url', 'tel:+22500000000').replace('tel:', '')
+                
+                with st.container():
+                    st.markdown(
+                        f"""
                         <div style="padding: 20px; border-radius: 10px; border: 1px solid #333333; margin-bottom: 10px; background-color: #1e1e1e;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <h3 style="margin: 0; color: #3b82f6;">{artisan['nom']}</h3>
@@ -344,182 +293,118 @@ if choix_menu == "🔍 Rechercher un prestataire":
                             <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 14px;">{description}</p>
                         </div>
                         """,
-              unsafe_allow_html=True,
-          )
+                        unsafe_allow_html=True
+                    )
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 {telephone_brut}</button></a>', unsafe_allow_html=True)
+                with col2:
+                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
+                
+                cle_appel = f"appel_sqlite_clean_{index_art}"
+                if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
+                    st.session_state.appel_en_cours = artisan['nom']
+                    st.rerun()
 
-        col1, col2 = st.columns(2)
-        with col1:
-          st.markdown(
-              f'<a href="{artisan["appel_url"]}" target="_self"><button'
-              ' style="background-color:#2563eb; color:white; padding:10px 16px;'
-              ' border:none; border-radius:6px; cursor:pointer; width:100%;'
-              f' font-weight:bold;">📞 {telephone_brut}</button></a>',
-              unsafe_allow_html=True,
-          )
-        with col2:
-          st.markdown(
-              f'<a href="{artisan["whatsapp_url"]}"'
-              ' target="_blank"><button style="background-color:#22c55e;'
-              " color:white; padding:10px 16px; border:none;"
-              " border-radius:6px; cursor:pointer; width:100%;"
-              ' font-weight:bold;">🟢 WhatsApp</button></a>',
-              unsafe_allow_html=True,
-          )
-
-        cle_appel = f"appel_sqlite_{index_art}"
-        if st.button(
-            f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}",
-            key=cle_appel,
-            use_container_width=True,
-        ):
-          st.session_state.appel_en_cours = artisan["nom"]
-          st.rerun()
-
-        texte_partage = urllib.parse.quote(
-            f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}."
-        )
-        st.markdown(
-            f'<a href="https://wa.me/?text={texte_partage}"'
-            ' target="_blank"><button style="background-color:#0f766e;'
-            " color:white; padding:8px 12px; border:none;"
-            " border-radius:6px; cursor:pointer; width:100%; font-size:13px;"
-            ' margin-top:5px;">📤 Recommander ce prestataire sur'
-            " WhatsApp</button></a>",
-            unsafe_allow_html=True,
-        )
-        st.markdown("<br>", unsafe_allow_html=True)
+                texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
+                st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
+        else:
+            st.warning("Aucun établissement ou prestataire trouvé pour cette recherche.")
+            
+    st.markdown("---")
+    st.subheader("🌟 Récemment ajoutés sur la plateforme")
+    if artisans:
+        derniers = artisans[-3:]
+        for art in reversed(derniers):
+            st.markdown(f"- **{art['nom']}** ({art['metier']}) à *{art['commune']}*")
     else:
-      st.warning(
-          "Aucun établissement ou prestataire trouvé pour cette recherche."
-      )
-
-  st.markdown("---")
-  st.subheader("🌟 Récemment ajoutés sur la plateforme")
-  if artisans:
-    derniers = artisans[-3:]
-    for art in reversed(derniers):
-      st.markdown(f"- **{art['nom']}** ({art['metier']}) à *{art['commune']}*")
-  else:
-    st.write("Aucun établissement pour le moment.")
+        st.write("Aucun établissement pour le moment.")
 
 elif choix_menu == "📝 Enregistrer un établissement":
-  st.subheader("Enregistrer un nouveau prestataire ou établissement")
-
-  with st.form("form_enregistrement"):
-    nom = st.text_input(
-        "Nom de l'établissement ou de l'artisan (ex: Chez Paul)"
-    )
-    metier = st.text_input("Métier ou secteur (ex: Boulangerie, Hôtel, Résidence)")
-    commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
-    description = st.text_area(
-        "Courte description des services proposés (ex: Situé au Vallon)"
-    )
-    badge = st.selectbox(
-        "Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"]
-    )
-    telephone = st.text_input("Numéro de téléphone (ex: +2250102030405)")
-
-    submit_button = st.form_submit_button(
-        "Enregistrer l'établissement", type="primary"
-    )
-
-    if submit_button:
-      nom = nom.strip()
-      metier = metier.strip()
-      commune = commune.strip()
-      description = description.strip()
-      telephone = telephone.strip()
-
-      if not nom or not metier or not commune or not description or not telephone:
-        st.error("⚠️ Tous les champs du formulaire doivent être remplis.")
-      elif len(telephone) < 8:
-        st.error("⚠️ Le numéro de téléphone est trop court pour être valide.")
-      else:
-        # Enregistrement direct dans SQLite
-        conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
+    st.subheader("Enregistrer un nouveau prestataire ou établissement")
+    
+    with st.form("form_enregistrement"):
+        nom = st.text_input("Nom de l'établissement ou de l'artisan (ex: Chez Paul)")
+        metier = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
+        commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
+        description = st.text_area("Courte description des services proposés (ex: Situé au Vallon)")
+        badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
+        telephone = st.text_input("Numéro de téléphone (ex: +2250102030405)")
+        
+        submit_button = st.form_submit_button("Enregistrer l'établissement", type="primary")
+        
+        if submit_button:
+            nom = nom.strip()
+            metier = metier.strip().capitalize()
+            commune = commune.strip().capitalize()
+            description = description.strip()
+            telephone = telephone.strip()
+            
+            if not nom or not metier or not commune or not description or not telephone:
+                st.error("⚠️ Tous les champs du formulaire doivent être remplis.")
+            elif len(telephone) < 8:
+                st.error("⚠️ Le numéro de téléphone est trop court pour être valide.")
+            else:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute("""
                     INSERT INTO artisans (nom, metier, commune, description, badge, appel_url, whatsapp_url)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
-                """,
-            (
-                nom,
-                metier,
-                commune,
-                description,
-                badge,
-                f"tel:{telephone}",
-                (
-                    "https://wa.me/"
-                    f"{telephone.replace('+', '').replace(' ', '')}"
-                ),
-            ),
-        )
-        conn.commit()
-        conn.close()
-
-        st.success("🎉 Établissement enregistré avec succès dans SQLite !")
-        st.rerun()
+                """, (nom, metier, commune, description, badge, f"tel:{telephone}", f"https://wa.me/{telephone.replace('+', '').replace(' ', '')}"))
+                conn.commit()
+                conn.close()
+                
+                st.success("🎉 Établissement enregistré avec succès dans SQLite !")
+                st.rerun()
 
 elif choix_menu == "⚙️ Administration & Modération" and est_admin:
-  st.subheader("🔒 Administration & Modération DJASSA")
-  st.info(f"📊 Total Établissements : {len(artisans)}")
-  st.write("Gestion, Attribution de Badges & Suppression des Faux Profils :")
-
-  if artisans:
-    st.markdown("---")
-    # Pour l'administration, on récupère aussi les ID depuis SQLite pour pouvoir modifier/supprimer proprement
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, nom, metier, commune, badge FROM artisans")
-    db_artisans = cursor.fetchall()
-    conn.close()
-
-    for index, art_db in enumerate(db_artisans):
-      art_id, art_nom, art_metier, art_commune, art_badge = art_db
-      with st.container():
-        st.markdown(
-            f"""
+    st.subheader("🔒 Administration & Modération DJASSA")
+    st.info(f"📊 Total Établissements : {len(artisans)}")
+    st.write("Gestion, Attribution de Badges & Suppression des Faux Profils :")
+    
+    if artisans:
+        st.markdown("---")
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, nom, metier, commune, badge FROM artisans")
+        db_artisans = cursor.fetchall()
+        conn.close()
+        
+        for index, art_db in enumerate(db_artisans):
+            art_id, art_nom, art_metier, art_commune, art_badge = art_db
+            with st.container():
+                st.markdown(
+                    f"""
                     <div style="padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 10px; background-color: #1e1e1e;">
                         <p style="margin: 0; color: #fff;"><strong>#{index+1} - {art_nom}</strong> ({art_metier} - {art_commune})</p>
                         <p style="margin: 5px 0 0 0; font-size: 13px; color: #aaa;">Badge actuel : <strong>{art_badge if art_badge else 'Professionnel'}</strong></p>
                     </div>
                     """,
-            unsafe_allow_html=True,
-        )
-
-      col_b, col_s = st.columns([2, 1])
-      with col_b:
-        nouveau_badge = st.selectbox(
-            "Modifier le badge",
-            ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"],
-            key=f"badge_{art_id}",
-        )
-        if st.button("Valider Badge", key=f"val_badge_{art_id}"):
-          conn = get_connection()
-          cursor = conn.cursor()
-          cursor.execute(
-              "UPDATE artisans SET badge = ? WHERE id = ?",
-              (nouveau_badge, art_id),
-          )
-          conn.commit()
-          conn.close()
-          st.success("Badge mis à jour avec succès dans SQLite !")
-          st.rerun()
-      with col_s:
-        if st.button(
-            "🗑️ Supprimer (Faux profil)",
-            key=f"suppr_{art_id}",
-            type="primary",
-        ):
-          conn = get_connection()
-          cursor = conn.cursor()
-          cursor.execute("DELETE FROM artisans WHERE id = ?", (art_id,))
-          conn.commit()
-          conn.close()
-          st.success(f"'{art_nom}' a été supprimé de la base de données !")
-          st.rerun()
-      st.markdown("<br>", unsafe_allow_html=True)
-  else:
-    st.info("Aucun prestataire à modérer.")
+                    unsafe_allow_html=True
+                )
+            
+            col_b, col_s = st.columns([2, 1])
+            with col_b:
+                nouveau_badge = st.selectbox("Modifier le badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"], key=f"badge_{art_id}")
+                if st.button("Valider Badge", key=f"val_badge_{art_id}"):
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE artisans SET badge = ? WHERE id = ?", (nouveau_badge, art_id))
+                    conn.commit()
+                    conn.close()
+                    st.success("Badge mis à jour avec succès dans SQLite !")
+                    st.rerun()
+            with col_s:
+                if st.button("🗑️ Supprimer (Faux profil)", key=f"suppr_{art_id}", type="primary"):
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute("DELETE FROM artisans WHERE id = ?", (art_id,))
+                    conn.commit()
+                    conn.close()
+                    st.success(f"'{art_nom}' a été supprimé de la base de données !")
+                    st.rerun()
+            st.markdown("<br>", unsafe_allow_html=True)
+    else:
+        st.info("Aucun prestataire à modérer.")
