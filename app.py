@@ -24,7 +24,9 @@ def charger_tous_artisans():
 
 tous_artisans = charger_tous_artisans()
 
-# Initialisation de la session
+# Initialisation des variables de session
+if "resultats_recherche" not in st.session_state:
+    st.session_state.resultats_recherche = None
 if "appel_en_cours" not in st.session_state:
     st.session_state.appel_en_cours = None
 
@@ -135,72 +137,92 @@ if choix_menu == "🔍 Rechercher un prestataire":
         components.html(html_appel, height=600, scrolling=False)
         st.stop()
 
-    # --- ESPACE DE RECHERCHE INTELLIGENTE ---
-    st.subheader("Espace de recherche intelligente")
+    # --- ESPACE DE RECHERCHE ---
+    st.subheader("Espace de recherche")
     st.info(f"🔥 Déjà **{len(tous_artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
-    col_recherche, col_commune = st.columns([2, 1])
-    
-    communes_disponibles = ["Toutes les communes"] + sorted(list(set(art['commune'] for art in tous_artisans if art['commune'])))
-    
-    with col_recherche:
-        mot_cle = st.text_input("🔍 Recherche par nom, métier ou mot-clé", placeholder="Ex: Coiffure, Plombier, Maquis...")
-    with col_commune:
-        commune_selectionnee = st.selectbox("📍 Filtrer par commune", communes_disponibles)
+    # --- 1. RECHERCHE DIRECTE PAR NOM ---
+    st.markdown("### 🎯 Recherche directe par nom d'établissement")
+    with st.form("form_recherche_nom"):
+        recherche_nom = st.text_input("Tapez le nom recherché (ex: Chez Paul)", placeholder="Ex: Chez Paul...")
+        lancer_recherche_nom = st.form_submit_button("Rechercher par nom", type="primary")
 
-    resultats = rechercher_artisans_intelligent(query=mot_cle, commune_filtre=commune_selectionnee)
-
-    metiers_populaires = sorted(list(set(art['metier'] for art in tous_artisans if art['metier'])))
-    if metiers_populaires:
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.write("💡 **Secteurs populaires :**")
-        cols_s = st.columns(min(len(metiers_populaires), 4))
-        for i, met in enumerate(metiers_populaires[:4]):
-            with cols_s[i]:
-                if st.button(met, use_container_width=True, key=f"sug_{i}"):
-                    mot_cle = met
-                    resultats = rechercher_artisans_intelligent(query=met, commune_filtre=commune_selectionnee)
+    if lancer_recherche_nom and recherche_nom.strip():
+        # Utilise la fonction SQL pour chercher spécifiquement
+        st.session_state.resultats_recherche = rechercher_artisans_intelligent(query=recherche_nom.strip(), commune_filtre="")
 
     st.markdown("---")
+    
+    # --- 2. RECHERCHE PAR SECTEUR ET COMMUNE ---
+    st.markdown("### 🔍 Ou filtrez par secteur et commune")
+    
+    # Nettoyage et normalisation des secteurs pour les suggestions
+    metiers_bruts = set()
+    for art in tous_artisans:
+        metier_text = art.get('metier', '').strip().capitalize()
+        if len(metier_text) > 2:
+            metiers_bruts.add(metier_text)
+    metiers_disponibles = sorted(list(metiers_bruts))
+    
+    if metiers_disponibles:
+        st.write("💡 **Suggestions de secteurs populaires :**")
+        cols_metiers = st.columns(min(len(metiers_disponibles), 4))
+        for i, met in enumerate(metiers_disponibles[:4]):
+            with cols_metiers[i]:
+                if st.button(met, use_container_width=True, key=f"btn_met_{i}"):
+                    st.session_state.resultats_recherche = rechercher_artisans_intelligent(query=met, commune_filtre="")
 
-    if resultats:
-        st.success(f"🎉 {len(resultats)} établissement(s) ou prestataire(s) trouvé(s) !")
-        for index_art, artisan in enumerate(resultats):
-            badge = artisan.get('badge', '⭐ Professionnel')
-            description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
-            telephone_brut = artisan.get('appel_url', 'tel:+22500000000').replace('tel:', '')
-            
-            with st.container():
-                st.markdown(
-                    f"""
-                    <div style="padding: 20px; border-radius: 10px; border: 1px solid #333333; margin-bottom: 10px; background-color: #1e1e1e;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h3 style="margin: 0; color: #3b82f6;">{artisan['nom']}</h3>
-                            <span style="background-color: #d97706; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">{badge}</span>
+    communes_disponibles = ["Toutes les communes"] + sorted(list(set(art['commune'] for art in tous_artisans if art['commune'])))
+
+    with st.form("form_recherche_criteres"):
+        metier_cherche = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
+        commune_selectionnee = st.selectbox("📍 Filtrer par commune", communes_disponibles)
+        lancer_recherche_criteres = st.form_submit_button("Lancer la recherche par critères", type="primary")
+
+    if lancer_recherche_criteres:
+        st.session_state.resultats_recherche = rechercher_artisans_intelligent(query=metier_cherche.strip(), commune_filtre=commune_selectionnee)
+
+    # --- AFFICHAGE DES RÉSULTATS ---
+    if st.session_state.resultats_recherche is not None:
+        resultats = st.session_state.resultats_recherche
+        if resultats:
+            st.success(f"🎉 {len(resultats)} établissement(s) ou prestataire(s) trouvé(s) !")
+            for index_art, artisan in enumerate(resultats):
+                badge = artisan.get('badge', '⭐ Professionnel')
+                description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
+                telephone_brut = artisan.get('appel_url', 'tel:+22500000000').replace('tel:', '')
+                
+                with st.container():
+                    st.markdown(
+                        f"""
+                        <div style="padding: 20px; border-radius: 10px; border: 1px solid #333333; margin-bottom: 10px; background-color: #1e1e1e;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="margin: 0; color: #3b82f6;">{artisan['nom']}</h3>
+                                <span style="background-color: #d97706; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">{badge}</span>
+                            </div>
+                            <p style="margin: 8px 0 5px 0; color: #e5e7eb;"><strong>{artisan['metier']}</strong> - 📍 {artisan['commune']}</p>
+                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 14px;">{description}</p>
                         </div>
-                        <p style="margin: 8px 0 5px 0; color: #e5e7eb;"><strong>{artisan['metier']}</strong> - 📍 {artisan['commune']}</p>
-                        <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 14px;">{description}</p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 {telephone_brut}</button></a>', unsafe_allow_html=True)
-            with col2:
-                st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
-            
-            cle_appel = f"appel_smart_{index_art}"
-            if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
-                st.session_state.appel_en_cours = artisan['nom']
-                st.rerun()
+                        """,
+                        unsafe_allow_html=True
+                    )
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 {telephone_brut}</button></a>', unsafe_allow_html=True)
+                with col2:
+                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
+                
+                cle_appel = f"appel_smart_{index_art}"
+                if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
+                    st.session_state.appel_en_cours = artisan['nom']
+                    st.rerun()
 
-            texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
-            st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-    else:
-        st.warning("Aucun établissement ou prestataire trouvé pour cette recherche.")
+                texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
+                st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
+                st.markdown("<br>", unsafe_allow_html=True)
+        else:
+            st.warning("Aucun établissement ou prestataire trouvé pour cette recherche.")
             
     st.markdown("---")
     st.subheader("🌟 Récemment ajoutés sur la plateforme")
