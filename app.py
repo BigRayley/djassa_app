@@ -40,7 +40,7 @@ st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
     
-    # --- INTERFACE D'APPEL 100% FONCTIONNELLE ---
+    # --- INTERFACE D'APPEL CORRIGÉE SANS ERREUR DE SYNTAXE ---
     if st.session_state.appel_en_cours:
         nom_appele = st.session_state.appel_en_cours
         
@@ -163,47 +163,41 @@ if choix_menu == "🔍 Rechercher un prestataire":
             </div>
 
             <script>
-                let isFullscreen = false;
-                function toggleFullscreen() {
-                    isFullscreen = !isFullscreen;
-                    if (!document.fullscreenElement) {
+                function toggleFullscreen() {{
+                    if (!document.fullscreenElement) {{
                         document.documentElement.requestFullscreen().catch(err => {{
                             alert("Mode plein écran non autorisé par le navigateur.");
                         }});
                         document.getElementById('btn-fullscreen').classList.add('active');
-                    } else {
-                        if (document.exitFullscreen) {
+                    }} else {{
+                        if (document.exitFullscreen) {{
                             document.exitFullscreen();
-                        }
+                        }}
                         document.getElementById('btn-fullscreen').classList.remove('active');
-                    }
-                }
+                    }}
+                }}
 
                 let speakerOn = false;
-                function toggleSpeaker() {
+                function toggleSpeaker() {{
                     speakerOn = !speakerOn;
                     let btn = document.getElementById('btn-speaker');
                     if (speakerOn) {{
                         btn.style.backgroundColor = '#22c55e';
-                        btn.title = "Haut-parleur activé";
                     }} else {{
                         btn.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
-                        btn.title = "Haut-parleur désactivé";
                     }}
-                }
+                }}
 
                 let micMuted = false;
-                function toggleMic() {
+                function toggleMic() {{
                     micMuted = !micMuted;
                     let btn = document.getElementById('btn-mic');
                     if (micMuted) {{
                         btn.style.backgroundColor = '#dc2626';
-                        btn.title = "Micro coupé";
                     }} else {{
                         btn.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
-                        btn.title = "Micro actif";
                     }}
-                }
+                }}
             </script>
         </body>
         </html>
@@ -292,7 +286,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
                 
-                cle_appel = f"appel_wave_interactive_{index_art}"
+                cle_appel = f"appel_wave_fixed_{index_art}"
                 if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
                     st.session_state.appel_en_cours = artisan['nom']
                     st.rerun()
