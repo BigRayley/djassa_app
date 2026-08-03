@@ -29,13 +29,14 @@ def init_db():
         )
     """)
 
-    # 3. NOUVEAU : Table des messages internes
+    # 3. Table des messages (mise à jour avec support image_url)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             artisan_id INTEGER NOT NULL,
             expediteur TEXT NOT NULL,
-            contenu TEXT NOT NULL,
+            contenu TEXT,
+            image_url TEXT,
             date_envoi DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (artisan_id) REFERENCES artisans (id)
         )
@@ -74,7 +75,6 @@ def rechercher_artisans_intelligent(query="", commune_filtre=""):
         } for r in lignes
     ]
 
-# --- FONCTIONS POUR LE SYSTÈME DE NOTATION ---
 def ajouter_avis(artisan_id, note, commentaire):
     conn = get_connection()
     cursor = conn.cursor()
@@ -90,18 +90,17 @@ def obtenir_avis(artisan_id):
     conn.close()
     return [{"note": r[0], "commentaire": r[1]} for r in lignes]
 
-# --- NOUVELLES FONCTIONS POUR LA MESSAGERIE ---
-def envoyer_message(artisan_id, expediteur, contenu):
+def envoyer_message(artisan_id, expediteur, contenu, image_url=None):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO messages (artisan_id, expediteur, contenu) VALUES (?, ?, ?)", (artisan_id, expediteur, contenu))
+    cursor.execute("INSERT INTO messages (artisan_id, expediteur, contenu, image_url) VALUES (?, ?, ?, ?)", (artisan_id, expediteur, contenu, image_url))
     conn.commit()
     conn.close()
 
 def obtenir_messages(artisan_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT expediteur, contenu, date_envoi FROM messages WHERE artisan_id = ? ORDER BY date_envoi DESC", (artisan_id,))
+    cursor.execute("SELECT expediteur, contenu, image_url, date_envoi FROM messages WHERE artisan_id = ? ORDER BY date_envoi DESC", (artisan_id,))
     lignes = cursor.fetchall()
     conn.close()
-    return [{"expediteur": r[0], "contenu": r[1], "date_envoi": r[2]} for r in lignes]
+    return [{"expediteur": r[0], "contenu": r[1], "image_url": r[2], "date_envoi": r[3]} for r in lignes]
