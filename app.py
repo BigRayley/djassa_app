@@ -1,28 +1,35 @@
 import urllib.parse
 import streamlit as st
 import streamlit.components.v1 as components
-from database import get_connection, init_db, rechercher_artisans_intelligent
+from database import get_connection, init_db, rechercher_artisans_intelligent, ajouter_avis, obtenir_avis
 
 # Initialisation de la base de données SQLite
 init_db()
 
 st.set_page_config(page_title="DJASSA - Bêta", page_icon="🇨🇮", layout="centered")
 
-# Chargement de tous les prestataires pour les statistiques et listes
+# Chargement de tous les prestataires (avec l'ID pour les avis)
 def charger_tous_artisans():
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT nom, metier, commune, description, badge, appel_url, whatsapp_url FROM artisans")
+    cursor.execute("SELECT id, nom, metier, commune, description, badge, appel_url, whatsapp_url FROM artisans")
     lignes = cursor.fetchall()
     conn.close()
     return [
         {
-            "nom": r[0], "metier": r[1], "commune": r[2],
-            "description": r[3], "badge": r[4], "appel_url": r[5], "whatsapp_url": r[6]
+            "id": r[0], "nom": r[1], "metier": r[2], "commune": r[3],
+            "description": r[4], "badge": r[5], "appel_url": r[6], "whatsapp_url": r[7]
         } for r in lignes
     ]
 
 tous_artisans = charger_tous_artisans()
+
+# Fonction pour calculer la moyenne des notes
+def calculer_moyenne_avis(avis_list):
+    if not avis_list:
+        return 0
+    total = sum(a['note'] for a in avis_list)
+    return round(total / len(avis_list), 1)
 
 # Initialisation des variables de session
 if "resultats_recherche" not in st.session_state:
@@ -148,7 +155,6 @@ if choix_menu == "🔍 Rechercher un prestataire":
         lancer_recherche_nom = st.form_submit_button("Rechercher par nom", type="primary")
 
     if lancer_recherche_nom and recherche_nom.strip():
-        # Utilise la fonction SQL pour chercher spécifiquement
         st.session_state.resultats_recherche = rechercher_artisans_intelligent(query=recherche_nom.strip(), commune_filtre="")
 
     st.markdown("---")
@@ -156,7 +162,6 @@ if choix_menu == "🔍 Rechercher un prestataire":
     # --- 2. RECHERCHE PAR SECTEUR ET COMMUNE ---
     st.markdown("### 🔍 Ou filtrez par secteur et commune")
     
-    # Nettoyage et normalisation des secteurs pour les suggestions
     metiers_bruts = set()
     for art in tous_artisans:
         metier_text = art.get('metier', '').strip().capitalize()
@@ -188,9 +193,16 @@ if choix_menu == "🔍 Rechercher un prestataire":
         if resultats:
             st.success(f"🎉 {len(resultats)} établissement(s) ou prestataire(s) trouvé(s) !")
             for index_art, artisan in enumerate(resultats):
+                artisan_id = artisan.get('id')
                 badge = artisan.get('badge', '⭐ Professionnel')
                 description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
                 telephone_brut = artisan.get('appel_url', 'tel:+22500000000').replace('tel:', '')
+                
+                # Récupération et calcul des avis
+                avis_artisan = obtenir_avis(artisan_id)
+                moyenne = calculer_moyenne_avis(avis_artisan)
+                nb_avis = len(avis_artisan)
+                etoiles_affichage = "⭐" * int(moyenne) if nb_avis > 0 else "Nouveau"
                 
                 with st.container():
                     st.markdown(
@@ -201,6 +213,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                                 <span style="background-color: #d97706; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">{badge}</span>
                             </div>
                             <p style="margin: 8px 0 5px 0; color: #e5e7eb;"><strong>{artisan['metier']}</strong> - 📍 {artisan['commune']}</p>
+                            <p style="margin: 0 0 10px 0; color: #fbbf24; font-size: 14px;">Avis : {etoiles_affichage} <em>({nb_avis} avis)</em></p>
                             <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 14px;">{description}</p>
                         </div>
                         """,
@@ -217,6 +230,25 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
                     st.session_state.appel_en_cours = artisan['nom']
                     st.rerun()
+
+                # Menu déroulant pour lire et laisser un avis
+                with st.expander(f"⭐ Voir ou laisser un avis pour {artisan['nom']}"):
+                    if nb_avis > 0:
+                        for avis in avis_artisan:
+                            st.markdown(f"**{'⭐'*avis['note']}** - *{avis['commentaire']}*")
+                    else:
+                        st.write("Soyez le premier à donner votre avis sur cet établissement !")
+                        
+                    st.markdown("---")
+                    with st.form(f"form_avis_{artisan_id}"):
+                        note_donnee = st.slider("Votre note (sur 5)", 1, 5, 5)
+                        comm_donne = st.text_area("Votre commentaire (optionnel)")
+                        btn_avis = st.form_submit_button("Envoyer l'avis", type="primary")
+                        
+                        if btn_avis:
+                            ajouter_avis(artisan_id, note_donnee, comm_donne.strip())
+                            st.success("Merci ! Votre avis a été enregistré.")
+                            st.rerun()
 
                 texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
                 st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
