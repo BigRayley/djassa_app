@@ -4,7 +4,7 @@ def init_db():
     conn = sqlite3.connect("djassa.db", check_same_thread=False)
     cursor = conn.cursor()
     
-    # 1. Table des artisans (existante)
+    # 1. Table des artisans
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS artisans (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -18,13 +18,25 @@ def init_db():
         )
     """)
     
-    # 2. NOUVEAU : Table des avis
+    # 2. Table des avis
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS avis (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             artisan_id INTEGER NOT NULL,
             note INTEGER NOT NULL,
             commentaire TEXT,
+            FOREIGN KEY (artisan_id) REFERENCES artisans (id)
+        )
+    """)
+
+    # 3. NOUVEAU : Table des messages internes
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            artisan_id INTEGER NOT NULL,
+            expediteur TEXT NOT NULL,
+            contenu TEXT NOT NULL,
+            date_envoi DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (artisan_id) REFERENCES artisans (id)
         )
     """)
@@ -39,7 +51,6 @@ def rechercher_artisans_intelligent(query="", commune_filtre=""):
     conn = get_connection()
     cursor = conn.cursor()
     
-    # Attention : j'ai ajouté la récupération de l'ID pour pouvoir lier les avis
     sql = "SELECT id, nom, metier, commune, description, badge, appel_url, whatsapp_url FROM artisans WHERE 1=1"
     params = []
     
@@ -58,26 +69,16 @@ def rechercher_artisans_intelligent(query="", commune_filtre=""):
     
     return [
         {
-            "id": r[0],
-            "nom": r[1],
-            "metier": r[2],
-            "commune": r[3],
-            "description": r[4],
-            "badge": r[5],
-            "appel_url": r[6],
-            "whatsapp_url": r[7]
+            "id": r[0], "nom": r[1], "metier": r[2], "commune": r[3],
+            "description": r[4], "badge": r[5], "appel_url": r[6], "whatsapp_url": r[7]
         } for r in lignes
     ]
 
-# --- NOUVELLES FONCTIONS POUR LE SYSTÈME DE NOTATION ---
-
+# --- FONCTIONS POUR LE SYSTÈME DE NOTATION ---
 def ajouter_avis(artisan_id, note, commentaire):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO avis (artisan_id, note, commentaire) VALUES (?, ?, ?)", 
-        (artisan_id, note, commentaire)
-    )
+    cursor.execute("INSERT INTO avis (artisan_id, note, commentaire) VALUES (?, ?, ?)", (artisan_id, note, commentaire))
     conn.commit()
     conn.close()
 
@@ -88,3 +89,19 @@ def obtenir_avis(artisan_id):
     lignes = cursor.fetchall()
     conn.close()
     return [{"note": r[0], "commentaire": r[1]} for r in lignes]
+
+# --- NOUVELLES FONCTIONS POUR LA MESSAGERIE ---
+def envoyer_message(artisan_id, expediteur, contenu):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO messages (artisan_id, expediteur, contenu) VALUES (?, ?, ?)", (artisan_id, expediteur, contenu))
+    conn.commit()
+    conn.close()
+
+def obtenir_messages(artisan_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT expediteur, contenu, date_envoi FROM messages WHERE artisan_id = ? ORDER BY date_envoi DESC", (artisan_id,))
+    lignes = cursor.fetchall()
+    conn.close()
+    return [{"expediteur": r[0], "contenu": r[1], "date_envoi": r[2]} for r in lignes]
