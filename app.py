@@ -34,48 +34,32 @@ st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
     
-    # --- INTERFACE D'APPEL PLEIN ÉCRAN NOIRE EXACTE STYLE WAVE AVEC LOGO DJASSA ---
+    # --- INTERFACE D'APPEL STYLE WAVE SÉCURISÉE ---
     if st.session_state.appel_en_cours:
         nom_appele = st.session_state.appel_en_cours
         
-        st.markdown(
-            f"""
-            <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #000000; z-index: 99999; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 50px 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; color: white;">
-                
-                <!-- Haut : Nom et animation de chargement -->
-                <div style="text-align: center; margin-top: 10px;">
-                    <h2 style="color: #ffffff; font-weight: 500; font-size: 24px; margin: 0 0 12px 0;">{nom_appele}</h2>
-                    <div style="display: flex; justify-content: center; align-items: center; gap: 4px;">
-                        <span style="font-size: 18px; color: #888888; animation: pulse 1s infinite;">⏳</span>
-                        <span style="color: #888888; font-size: 14px; letter-spacing: 0.5px;">Connexion audio en cours...</span>
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown(f"<h2 style='text-align: center; color: white;'>{nom_appele}</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #9ca3af; letter-spacing: 1px;'>⏳ Connexion audio en cours...</p>", unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        col_avatar = st.columns([1, 1, 1])
+        with col_avatar[1]:
+            st.markdown(
+                """
+                <div style="width: 130px; height: 130px; background: linear-gradient(135deg, #0ea5e9, #f97316); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto; box-shadow: 0 0 25px rgba(14, 165, 233, 0.4);">
+                    <div style="width: 114px; height: 114px; background-color: #000000; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
+                        <span style="font-size: 50px;">🛒</span>
                     </div>
                 </div>
-
-                <!-- Centre : Logo DJASSA personnalisé -->
-                <div style="display: flex; justify-content: center; align-items: center;">
-                    <div style="width: 130px; height: 130px; background: linear-gradient(135deg, #0ea5e9, #f97316); border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 30px rgba(14, 165, 233, 0.3);">
-                        <div style="width: 116px; height: 116px; background-color: #000000; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
-                            <span style="font-size: 50px;">🛒</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Bas : Barre de contrôle Wave (haut-parleur, micro, raccrocher) -->
-                <div style="width: 100%; max-width: 340px; display: flex; justify-content: space-around; align-items: center; margin-bottom: 20px;">
-                    <div style="background-color: rgba(255, 255, 255, 0.15); width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; cursor: pointer;" title="Options">⚙️</div>
-                    <div style="background-color: rgba(255, 255, 255, 0.15); width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; cursor: pointer;" title="Haut-parleur">🔊</div>
-                    <div style="background-color: rgba(255, 255, 255, 0.15); width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; cursor: pointer;" title="Couper le micro">🔇</div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # Bouton Streamlit invisible superposé pour déclencher la fermeture de l'appel
-        st.markdown("<br><br><br><br><br><br><br>", unsafe_allow_html=True)
-        col_raccrocher = st.columns([1, 2, 1])
-        with col_raccrocher[1]:
-            if st.button("🔴 📞 Raccrocher", type="primary", use_container_width=True):
+                """,
+                unsafe_allow_html=True
+            )
+        
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        col_btn = st.columns([1, 2, 1])
+        with col_btn[1]:
+            if st.button("🔴 📞 Raccrocher l'appel", type="primary", use_container_width=True):
                 st.session_state.appel_en_cours = None
                 st.rerun()
         
@@ -161,7 +145,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
                 
-                cle_appel = f"appel_wave_style_{index_art}"
+                cle_appel = f"appel_wave_clean_{index_art}"
                 if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
                     st.session_state.appel_en_cours = artisan['nom']
                     st.rerun()
@@ -186,7 +170,7 @@ elif choix_menu == "📝 Enregistrer un établissement":
     
     with st.form("form_enregistrement"):
         nom = st.text_input("Nom de l'établissement ou de l'artisan (ex: Chez Paul)")
-        metier = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
+        metier = st.text_input("Métier ou secteur (ex: Boulangerie, Hôtel, Résidence)")
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
         description = st.text_area("Courte description des services proposés (ex: Situé au Vallon)")
         badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
