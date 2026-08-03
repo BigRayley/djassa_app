@@ -11,7 +11,7 @@ try:
 except FileNotFoundError:
     artisans = []
 
-# Initialisation de la mémoire de session pour les résultats
+# Initialisation de la session
 if "resultats_recherche" not in st.session_state:
     st.session_state.resultats_recherche = None
 if "appel_en_cours" not in st.session_state:
@@ -21,7 +21,7 @@ if "appel_en_cours" not in st.session_state:
 params = st.query_params
 est_admin = params.get("admin") == "djassa_admin_secret_2026"
 
-# En-tête principal et Navigation horizontale moderne
+# En-tête principal et Navigation
 st.title("🇨🇮 DJASSA")
 st.write("La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.")
 
@@ -33,11 +33,60 @@ else:
 st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
-    st.subheader("Espace de recherche")
     
+    # --- SI UN APPEL EN COURS EST ACTIF, ON AFFICHE L'INTERFACE PLEIN ÉCRAN TYPE WAVE ---
+    if st.session_state.appel_en_cours:
+        nom_appele = st.session_state.appel_en_cours
+        
+        st.markdown(
+            f"""
+            <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #0b0f19; z-index: 99999; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
+                
+                <!-- En-tête avec nom et statut -->
+                <div style="text-align: center; margin-top: 20px;">
+                    <h3 style="color: #ffffff; font-weight: 400; font-size: 22px; margin: 0;">{nom_appele}</h3>
+                    <p style="color: #9ca3af; font-size: 14px; margin-top: 8px; letter-spacing: 1px;">Connexion en cours...</p>
+                    <div style="margin-top: 15px;">
+                        <span style="display: inline-block; width: 8px; height: 8px; background-color: #3b82f6; border-radius: 50%; animation: pulse 1.5s infinite; margin: 0 3px;"></span>
+                        <span style="display: inline-block; width: 8px; height: 8px; background-color: #3b82f6; border-radius: 50%; animation: pulse 1.5s infinite 0.3s; margin: 0 3px;"></span>
+                        <span style="display: inline-block; width: 8px; height: 8px; background-color: #3b82f6; border-radius: 50%; animation: pulse 1.5s infinite 0.6s; margin: 0 3px;"></span>
+                    </div>
+                </div>
+
+                <!-- Avatar central -->
+                <div style="display: flex; justify-content: center; align-items: center;">
+                    <div style="width: 110px; height: 110px; background-color: #0ea5e9; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 25px rgba(14, 165, 233, 0.4);">
+                        <span style="font-size: 45px;">🏢</span>
+                    </div>
+                </div>
+
+                <!-- Barre de contrôle du bas -->
+                <div style="width: 100%; max-width: 350px; background-color: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border-radius: 40px; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <span style="color: #9ca3af; font-size: 20px; cursor: pointer;" title="Muet">🎙️</span>
+                    <span style="color: #9ca3af; font-size: 20px; cursor: pointer;" title="Haut-parleur">🔊</span>
+                    <span style="color: #9ca3af; font-size: 20px; cursor: pointer;" title="Clavier">123</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Bouton invisible par-dessus pour permettre de raccrocher proprement
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        col_raccrocher = st.columns([1, 2, 1])
+        with col_raccrocher[1]:
+            if st.button("🔴 Raccrocher l'appel", type="primary", use_container_width=True):
+                st.session_state.appel_en_cours = None
+                st.rerun()
+        
+        # Stoppe le reste de l'affichage pendant l'appel
+        st.stop()
+
+    # --- RECHERCHE ET LISTING CLASSIQUE ---
+    st.subheader("Espace de recherche")
     st.info(f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
-    # --- 1. RECHERCHE DIRECTE PAR NOM ---
+    # 1. Recherche directe par nom
     st.markdown("### 🎯 Recherche directe par nom d'établissement")
     with st.form("form_recherche_nom"):
         recherche_nom = st.text_input("Tapez le nom recherché (ex: Chez Paul)", placeholder="Ex: Chez Paul...")
@@ -48,7 +97,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
 
     st.markdown("---")
     
-    # --- 2. RECHERCHE PAR SECTEUR ET COMMUNE ---
+    # 2. Recherche par secteur et commune
     st.markdown("### 🔍 Ou filtrez par secteur et commune")
     
     metiers_bruts = set()
@@ -86,7 +135,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
         
         st.session_state.resultats_recherche = resultats_criteres
 
-    # --- AFFICHAGE PERSISTANT DES RÉSULTATS ---
+    # Affichage des résultats
     if st.session_state.resultats_recherche is not None:
         resultats = st.session_state.resultats_recherche
         if resultats:
@@ -113,22 +162,15 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    # Bouton Téléphone classique (lance l'appel natif du téléphone)
                     st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 {telephone_brut}</button></a>', unsafe_allow_html=True)
                 with col2:
-                    # Bouton WhatsApp avec logo vert et le texte épuré "WhatsApp"
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
                 
-                # Style Yango : Bouton d'appel internet direct sans forfait (audio instantané type VoIP)
-                cle_appel = f"appel_yango_{index_art}"
+                # Bouton d'appel internet style Wave / VoIP épuré
+                cle_appel = f"appel_wave_{index_art}"
                 if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
                     st.session_state.appel_en_cours = artisan['nom']
-
-                if st.session_state.appel_en_cours == artisan['nom']:
-                    st.success(f"📡 Connexion audio internet établie avec succès vers **{artisan['nom']}**. (Appel en cours...)")
-                    if st.button(f"Raccrocher l'appel avec {artisan['nom']}", key=f"stop_{index_art}"):
-                        st.session_state.appel_en_cours = None
-                        st.rerun()
+                    st.rerun()
 
                 texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
                 st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
