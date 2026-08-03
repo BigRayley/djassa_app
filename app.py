@@ -1,6 +1,7 @@
 import json
 import urllib.parse
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(page_title="DJASSA - Bêta", page_icon="🇨🇮", layout="centered")
 
@@ -34,35 +35,137 @@ st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
     
-    # --- INTERFACE D'APPEL STYLE WAVE SÉCURISÉE ---
+    # --- INTERFACE D'APPEL STYLE WAVE FIDELE AVEC HTML/JS SÉCURISÉ ---
     if st.session_state.appel_en_cours:
         nom_appele = st.session_state.appel_en_cours
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown(f"<h2 style='text-align: center; color: white;'>{nom_appele}</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #9ca3af; letter-spacing: 1px;'>⏳ Connexion audio en cours...</p>", unsafe_allow_html=True)
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        col_avatar = st.columns([1, 1, 1])
-        with col_avatar[1]:
-            st.markdown(
-                """
-                <div style="width: 130px; height: 130px; background: linear-gradient(135deg, #0ea5e9, #f97316); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto; box-shadow: 0 0 25px rgba(14, 165, 233, 0.4);">
-                    <div style="width: 114px; height: 114px; background-color: #000000; border-radius: 50%; display: flex; justify-content: center; align-items: center;">
-                        <span style="font-size: 50px;">🛒</span>
-                    </div>
+        # Composant HTML/CSS/JS complet pour l'interface d'appel plein écran style Wave
+        html_appel = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{
+                    margin: 0;
+                    padding: 0;
+                    background-color: #0b0f19;
+                    color: white;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    align-items: center;
+                    height: 100vh;
+                    box-sizing: border-box;
+                    padding: 40px 20px;
+                    overflow: hidden;
+                }}
+                .header-text {{
+                    text-align: center;
+                    margin-top: 20px;
+                }}
+                .header-text h2 {{
+                    font-size: 24px;
+                    font-weight: 500;
+                    margin: 0 0 8px 0;
+                }}
+                .header-text p {{
+                    color: #9ca3af;
+                    font-size: 14px;
+                    letter-spacing: 1px;
+                    margin: 0;
+                }}
+                .avatar-container {{
+                    width: 130px;
+                    height: 130px;
+                    background: linear-gradient(135deg, #0ea5e9, #f97316);
+                    border-radius: 50%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    box-shadow: 0 0 30px rgba(14, 165, 233, 0.4);
+                }}
+                .avatar-inner {{
+                    width: 116px;
+                    height: 116px;
+                    background-color: #0b0f19;
+                    border-radius: 50%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    font-size: 50px;
+                }}
+                .controls-bar {{
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 25px;
+                    margin-bottom: 20px;
+                }}
+                .control-btn {{
+                    background-color: rgba(255, 255, 255, 0.1);
+                    width: 55px;
+                    height: 55px;
+                    border-radius: 50%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    font-size: 20px;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                }}
+                .control-btn:hover {{
+                    background-color: rgba(255, 255, 255, 0.2);
+                }}
+                .hangup-btn {{
+                    background-color: #dc2626;
+                    width: 65px;
+                    height: 65px;
+                    border-radius: 50%;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    font-size: 26px;
+                    cursor: pointer;
+                    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+                    transition: transform 0.2s;
+                }}
+                .hangup-btn:hover {{
+                    transform: scale(1.05);
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header-text">
+                <h2>{nom_appele}</h2>
+                <p>⏳ Connexion audio en cours...</p>
+            </div>
+
+            <div class="avatar-container">
+                <div class="avatar-inner">
+                    🛒
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
+            </div>
+
+            <div class="controls-bar">
+                <div class="control-btn" title="Agrandir / Réduire l'écran" onclick="alert('Mode plein écran')">🔲</div>
+                <div class="control-btn" title="Haut-parleur" onclick="alert('Haut-parleur activé')">🔊</div>
+                <div class="control-btn" title="Couper le micro" onclick="alert('Micro coupé')">🔇</div>
+                <div class="hangup-btn" title="Raccrocher" onclick="window.parent.document.getElementById('raccrocher_btn').click()">📞</div>
+            </div>
+        </body>
+        </html>
+        """
         
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        col_btn = st.columns([1, 2, 1])
-        with col_btn[1]:
-            if st.button("🔴 📞 Raccrocher l'appel", type="primary", use_container_width=True):
-                st.session_state.appel_en_cours = None
-                st.rerun()
+        # Affichage du composant HTML
+        components.html(html_appel, height=500)
         
+        # Bouton Streamlit caché qui capte l'action de raccrocher depuis le composant HTML
+        if st.button("🔴 Raccrocher l'appel", key="raccrocher_btn", type="primary", use_container_width=True):
+            st.session_state.appel_en_cours = None
+            st.rerun()
+            
         st.stop()
 
     # --- RECHERCHE ET LISTING CLASSIQUE ---
@@ -145,7 +248,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
                 
-                cle_appel = f"appel_wave_clean_{index_art}"
+                cle_appel = f"appel_wave_exact_{index_art}"
                 if st.button(f"🌐 Appel internet (Sans forfait) avec {artisan['nom']}", key=cle_appel, use_container_width=True):
                     st.session_state.appel_en_cours = artisan['nom']
                     st.rerun()
@@ -161,7 +264,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
     if artisans:
         derniers = artisans[-3:]
         for art in reversed(derniers):
-            st.markdown(f"- **{art['nom']}** ({art['metier']}) à *{art['commune']}*")
+            st.markdown(f"- **{art['nom']}** ({artisan['metier']}) à *{artisan['commune']}*")
     else:
         st.write("Aucun établissement pour le moment.")
 
@@ -170,7 +273,7 @@ elif choix_menu == "📝 Enregistrer un établissement":
     
     with st.form("form_enregistrement"):
         nom = st.text_input("Nom de l'établissement ou de l'artisan (ex: Chez Paul)")
-        metier = st.text_input("Métier ou secteur (ex: Boulangerie, Hôtel, Résidence)")
+        metier = st.text_input("Métier ou secteur (ex: Hôtel, Boulangerie)")
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
         description = st.text_area("Courte description des services proposés (ex: Situé au Vallon)")
         badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
