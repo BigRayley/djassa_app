@@ -21,9 +21,9 @@ st.title("🇨🇮 DJASSA")
 st.write("La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.")
 
 if est_admin:
-    choix_menu = st.radio("Navigation", ["🔍 Rechercher un prestataire", "📞 Appel Direct Web", "📝 Enregistrer un établissement", "⚙️ Administration & Modération"], horizontal=True)
+    choix_menu = st.radio("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement", "⚙️ Administration & Modération"], horizontal=True)
 else:
-    choix_menu = st.radio("Navigation", ["🔍 Rechercher un prestataire", "📞 Appel Direct Web", "📝 Enregistrer un établissement"], horizontal=True)
+    choix_menu = st.radio("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement"], horizontal=True)
 
 st.markdown("---")
 
@@ -32,7 +32,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
     
     st.info(f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
-    # --- 1. BARRE DE RECHERCHE DIRECTE PAR NOM ---
+    # --- 1. RECHERCHE DIRECTE PAR NOM ---
     st.markdown("### 🎯 Recherche directe par nom d'établissement")
     with st.form("form_recherche_nom"):
         recherche_nom = st.text_input("Tapez le nom recherché (ex: Chez Paul)", placeholder="Ex: Chez Paul...")
@@ -43,7 +43,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
         
         if resultats_nom:
             st.success(f"🎉 {len(resultats_nom)} établissement(s) trouvé(s) pour '{recherche_nom}' :")
-            for artisan in resultats_nom:
+            for index_art, artisan in enumerate(resultats_nom):
                 badge = artisan.get('badge', '⭐ Professionnel')
                 description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
                 
@@ -62,12 +62,18 @@ if choix_menu == "🔍 Rechercher un prestataire":
                         unsafe_allow_html=True
                     )
                 
+                # Options de contact direct sur le profil
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">💬 Téléphone Classique</button></a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 Tel Classique</button></a>', unsafe_allow_html=True)
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟩 WhatsApp Direct</button></a>', unsafe_allow_html=True)
                 
+                # Intégration de l'appel internet direct WebRTC dans le profil
+                with st.expander(f"🌐 Appel Internet Direct (Sans forfait) avec {artisan['nom']}"):
+                    st.write(f"Établissez une connexion audio/vidéo sécurisée via internet avec **{artisan['nom']}** :")
+                    webrtc_streamer(key=f"call_nom_{index_art}", mode=WebRtcMode.SENDRECV)
+
                 texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
                 st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -76,7 +82,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
 
     st.markdown("---")
     
-    # --- 2. RECHERCHE CLASSIQUE PAR SECTEUR ET COMMUNE ---
+    # --- 2. RECHERCHE PAR SECTEUR ET COMMUNE ---
     st.markdown("### 🔍 Ou filtrez par secteur et commune")
     
     metiers_bruts = set()
@@ -114,7 +120,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
 
         if resultats_criteres:
             st.success(f"🎉 {len(resultats_criteres)} prestataire(s) trouvé(s) !")
-            for artisan in resultats_criteres:
+            for index_art, artisan in enumerate(resultats_criteres):
                 badge = artisan.get('badge', '⭐ Professionnel')
                 description = artisan.get('description', 'Prestataire de confiance disponible sur Abidjan.')
                 
@@ -135,10 +141,15 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">💬 Téléphone Classique</button></a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 Tel Classique</button></a>', unsafe_allow_html=True)
                 with col2:
                     st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟩 WhatsApp Direct</button></a>', unsafe_allow_html=True)
                 
+                # Intégration de l'appel internet direct WebRTC dans le profil
+                with st.expander(f"🌐 Appel Internet Direct (Sans forfait) avec {artisan['nom']}"):
+                    st.write(f"Établissez une connexion audio/vidéo sécurisée via internet avec **{artisan['nom']}** :")
+                    webrtc_streamer(key=f"call_crit_{index_art}", mode=WebRtcMode.SENDRECV)
+
                 texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
                 st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -153,14 +164,6 @@ if choix_menu == "🔍 Rechercher un prestataire":
             st.markdown(f"- **{art['nom']}** ({art['metier']}) à *{art['commune']}*")
     else:
         st.write("Aucun établissement pour le moment.")
-
-elif choix_menu == "📞 Appel Direct Web":
-    st.subheader("📞 Salon d'Appel Audio & Vidéo en Direct (DJASSA WebRTC)")
-    st.write("Connectez-vous en direct via internet avec un prestataire ou un client sans consommer votre crédit d'appel mobile.")
-    
-    # Lancement du composant de flux audio/vidéo en direct
-    webrtc_streamer(key="djassa-call", mode=WebRtcMode.SENDRECV)
-    st.info("💡 Autorisez l'accès à votre caméra et votre micro pour démarrer la communication en direct.")
 
 elif choix_menu == "📝 Enregistrer un établissement":
     st.subheader("Enregistrer un nouveau prestataire ou établissement")
