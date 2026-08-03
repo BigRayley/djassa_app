@@ -1,4 +1,4 @@
-import json
+M import json
 import urllib.parse
 import streamlit as st
 
@@ -31,13 +31,24 @@ if choix_menu == "🔍 Rechercher un prestataire":
     
     st.info(f"🔥 Déjà **{len(artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
-    # Extraction dynamique des métiers uniques enregistrés pour les suggestions
-    metiers_disponibles = sorted(list(set(artisan['metier'] for artisan in artisans)))
+    # Extraction et séparation intelligente des secteurs/métiers uniques
+    metiers_bruts = set()
+    for artisan in artisans:
+        metier_text = artisan.get('metier', '')
+        # Si le texte contient des séparateurs comme "et", "&", ou des espaces multiples, on peut éclater ou garder propre
+        # Ici, on nettoie et on ajoute chaque mot clé pertinent ou le métier complet séparé
+        for mot in metier_text.replace(" & ", " ").replace(" et ", " ").split():
+            if len(mot) > 2: # Ignore les petits mots de liaison
+                metiers_bruts.add(mot.capitalize())
+        # On garde aussi le métier complet d'origine
+        metiers_bruts.add(metier_text)
+
+    metiers_disponibles = sorted(list(metiers_bruts))
     
-    # Filtres rapides par métier en un clic si des métiers existent
+    # Filtres rapides par secteur en un clic
     metier_selectionne = ""
     if metiers_disponibles:
-        st.write("**Suggestions de métiers populaires :**")
+        st.write("**Suggestions par secteur :**")
         cols_metiers = st.columns(min(len(metiers_disponibles), 4))
         for i, met in enumerate(metiers_disponibles[:4]):
             with cols_metiers[i]:
@@ -45,7 +56,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
                     metier_selectionne = met
 
     # Champ texte pour le métier (pré-rempli si un bouton de suggestion est cliqué)
-    metier_cherche = st.text_input("Métier ou secteur recherché (ex: Plombier, Hôtel, Livreur)", value=metier_selectionne)
+    metier_cherche = st.text_input("Métier ou secteur recherché (ex: Hôtel, Résidence, Plombier)", value=metier_selectionne)
     
     # Filtres rapides par commune en un clic
     st.write("**Ou filtrez rapidement par commune :**")
@@ -116,7 +127,7 @@ elif choix_menu == "📝 Enregistrer un établissement":
     
     with st.form("form_enregistrement"):
         nom = st.text_input("Nom de l'établissement ou de l'artisan")
-        metier = st.text_input("Métier ou secteur (ex: Plombier, Hôtel Résidence, Maquis Bar)")
+        metier = st.text_input("Métier ou secteur (ex: Hôtel, Résidence, Boulangerie, Plombier)")
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
         description = st.text_area("Courte description des services proposés")
         badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
