@@ -34,38 +34,29 @@ st.markdown("---")
 
 if choix_menu == "🔍 Rechercher un prestataire":
     
-    # --- INTERFACE D'APPEL PLEIN ÉCRAN TYPE WAVE ---
+    # --- INTERFACE D'APPEL TYPE WAVE PROPRE ---
     if st.session_state.appel_en_cours:
         nom_appele = st.session_state.appel_en_cours
         
-        st.markdown(
-            f"""
-            <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #0b0f19; z-index: 99999; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 50px 20px; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">
-                
-                <div style="text-align: center; margin-top: 30px;">
-                    <h2 style="color: #ffffff; font-weight: 400; font-size: 24px; margin: 0;">{nom_appele}</h2>
-                    <p style="color: #9ca3af; font-size: 15px; margin-top: 8px; letter-spacing: 1px;">Connexion en cours...</p>
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown(f"<h1 style='text-align: center; color: white;'>{nom_appele}</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #9ca3af; letter-spacing: 2px;'>Connexion audio en cours...</p>", unsafe_allow_html=True)
+        
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        col_avatar = st.columns([1, 1, 1])
+        with col_avatar[1]:
+            st.markdown(
+                """
+                <div style="width: 130px; height: 130px; background-color: #0ea5e9; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto; box-shadow: 0 0 35px rgba(14, 165, 233, 0.6);">
+                    <span style="font-size: 55px;">🐧</span>
                 </div>
-
-                <div style="display: flex; justify-content: center; align-items: center;">
-                    <div style="width: 120px; height: 120px; background-color: #0ea5e9; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 0 30px rgba(14, 165, 233, 0.5);">
-                        <span style="font-size: 50px;">🐧</span>
-                    </div>
-                </div>
-
-                <div style="width: 100%; max-width: 320px; background-color: rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px); border-radius: 40px; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                    <span style="color: #ffffff; font-size: 20px; cursor: pointer;">🎙️</span>
-                    <span style="color: #ffffff; font-size: 20px; cursor: pointer;">🔊</span>
-                    <span style="color: #ffffff; font-size: 20px; cursor: pointer;">⌨️</span>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        st.markdown("<br><br><br><br><br><br><br>", unsafe_allow_html=True)
-        col_raccrocher = st.columns([1, 2, 1])
-        with col_raccrocher[1]:
+                """,
+                unsafe_allow_html=True
+            )
+        
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        col_btn = st.columns([1, 2, 1])
+        with col_btn[1]:
             if st.button("🔴 Raccrocher l'appel", type="primary", use_container_width=True):
                 st.session_state.appel_en_cours = None
                 st.rerun()
