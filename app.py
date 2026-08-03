@@ -31,7 +31,9 @@ def calculer_moyenne_avis(avis_list):
     total = sum(a['note'] for a in avis_list)
     return round(total / len(avis_list), 1)
 
-# Initialisation des variables de session
+# Initialisation des variables de session (Pseudo automatique & états)
+if "utilisateur_pseudo" not in st.session_state:
+    st.session_state.utilisateur_pseudo = ""
 if "resultats_recherche" not in st.session_state:
     st.session_state.resultats_recherche = None
 if "appel_en_cours" not in st.session_state:
@@ -49,6 +51,25 @@ est_admin = params.get("admin") == "djassa_admin_secret_2026"
 # En-tête principal et Navigation
 st.title("🇨🇮 DJASSA")
 st.write("La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.")
+
+# --- BARRE D'IDENTIFICATION UTILISATEUR DISCRÈTE ---
+with st.sidebar:
+    st.header("👤 Votre Session")
+    if not st.session_state.utilisateur_pseudo:
+        pseudo_saisi = st.text_input("Entrez votre prénom ou pseudo :", placeholder="Ex: Jean Kouassi")
+        if st.button("Valider mon identité"):
+            if pseudo_saisi.strip():
+                st.session_state.utilisateur_pseudo = pseudo_saisi.strip()
+                st.success(f"Bienvenue, {st.session_state.utilisateur_pseudo} !")
+                st.rerun()
+            else:
+                st.warning("Veuillez entrer un pseudo valide.")
+    else:
+        st.info(f"Connecté en tant que : **{st.session_state.utilisateur_pseudo}**")
+        if st.button("Modifier mon pseudo"):
+            st.session_state.utilisateur_pseudo = ""
+            st.rerun()
+    st.markdown("---")
 
 if est_admin:
     choix_menu = st.radio("Navigation", ["🔍 Rechercher un prestataire", "📝 Enregistrer un établissement", "⚙️ Administration & Modération"], horizontal=True)
@@ -180,7 +201,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
     communes_disponibles = ["Toutes les communes"] + sorted(list(set(art['commune'] for art in tous_artisans if art['commune'])))
 
     with st.form("form_recherche_criteres"):
-        metier_cherche = st.text_input("Métier ou secteur (ex: Bar, Boulangerie)")
+        metier_cherche = st.text_input("Métier ou secteur (ex: Bar, Boulangerie, Hôtel)")
         commune_selectionnee = st.selectbox("📍 Filtrer par commune", communes_disponibles)
         lancer_recherche_criteres = st.form_submit_button("Lancer la recherche par critères", type="primary")
 
@@ -250,28 +271,51 @@ if choix_menu == "🔍 Rechercher un prestataire":
                             st.success("Merci ! Votre avis a été enregistré.")
                             st.rerun()
 
-                # --- NOUVEAU MENU DÉROULANT : MESSAGERIE INTERNE ---
+                # --- VRAI CHAT DIRECT INTELLIGENT ---
                 messages_artisan = obtenir_messages(artisan_id)
-                with st.expander(f"💬 Envoyer un message direct à {artisan['nom']} ({len(messages_artisan)} messages)"):
+                with st.expander(f"💬 Discussion en direct avec {artisan['nom']} ({len(messages_artisan)} messages)"):
+                    
+                    # Conteneur de style chat direct (bulles de message)
                     if messages_artisan:
                         for msg in messages_artisan:
-                            st.markdown(f"💬 **{msg['expediteur']}** : {msg['contenu']} <br><span style='font-size:11px; color:gray;'>({msg['date_envoi']})</span>", unsafe_allow_html=True)
-                            st.markdown("---")
-                    else:
-                        st.write("Aucun message pour l'instant. Envoyez le premier !")
-
-                    with st.form(f"form_msg_{artisan_id}"):
-                        nom_exp = st.text_input("Votre nom ou pseudo")
-                        texte_msg = st.text_area("Votre message")
-                        btn_msg = st.form_submit_button("Envoyer le message", type="primary")
-
-                        if btn_msg:
-                            if nom_exp.strip() and texte_msg.strip():
-                                envoyer_message(artisan_id, nom_exp.strip(), texte_msg.strip())
-                                st.success("Message envoyé avec succès !")
-                                st.rerun()
+                            est_expediteur_actuel = (msg['expediteur'] == st.session_state.utilisateur_pseudo)
+                            
+                            if est_expediteur_actuel:
+                                # Bulle de l'utilisateur connecté (alignée à droite / style épuré)
+                                st.markdown(f"""
+                                <div style="background-color: #1e3a8a; padding: 10px 14px; border-radius: 12px 12px 0px 12px; margin: 8px 0; margin-left: 20%; color: white; text-align: right;">
+                                    <span style="font-size: 11px; color: #93c5fd; display: block; margin-bottom: 2px;">Moi ({msg['date_envoi']})</span>
+                                    {msg['contenu']}
+                                </div>
+                                """, unsafe_allow_html=True)
                             else:
-                                st.error("Veuillez remplir votre nom et le message.")
+                                # Bulle des autres utilisateurs ou du prestataire
+                                st.markdown(f"""
+                                <div style="background-color: #374151; padding: 10px 14px; border-radius: 12px 12px 12px 0px; margin: 8px 0; margin-right: 20%; color: white;">
+                                    <span style="font-size: 11px; color: #cbd5e1; display: block; margin-bottom: 2px;">{msg['expediteur']} ({msg['date_envoi']})</span>
+                                    {msg['contenu']}
+                                </div>
+                                """, unsafe_allow_html=True)
+                    else:
+                        st.info("Aucune discussion pour le moment. Lancez la conversation !")
+
+                    st.markdown("---")
+                    
+                    # Formulaire de message direct sans ressaisir le pseudo s'il est déjà connecté
+                    if not st.session_state.utilisateur_pseudo:
+                        st.warning("⚠️ Veuillez d'abord renseigner votre pseudo dans le menu latéral à gauche pour participer à la discussion.")
+                    else:
+                        with st.form(f"form_chat_{artisan_id}"):
+                            texte_msg = st.text_input("Votre message direct...", placeholder="Écrivez votre message ici...")
+                            btn_envoyer_chat = st.form_submit_button("Envoyer le message 🚀", type="primary")
+
+                            if btn_envoyer_chat:
+                                if texte_msg.strip():
+                                    envoyer_message(artisan_id, st.session_state.utilisateur_pseudo, texte_msg.strip())
+                                    st.success("Message envoyé !")
+                                    st.rerun()
+                                else:
+                                    st.error("Le message ne peut pas être vide.")
 
                 texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
                 st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
