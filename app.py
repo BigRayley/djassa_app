@@ -9,6 +9,27 @@ init_db()
 
 st.set_page_config(page_title="DJASSA - Bêta", page_icon="🇨🇮", layout="centered")
 
+# --- CSS PERSONNALISÉ MOBILE FIRST ---
+st.markdown("""
+    <style>
+    /* Ajustements globaux pour le confort mobile */
+    .stButton button {
+        width: 100%;
+        border-radius: 8px;
+        font-weight: bold;
+        padding: 10px;
+    }
+    /* Adaptation des conteneurs pour éviter les débordements sur petit écran */
+    div[data-testid="stVerticalBlock"] > div {
+        max-width: 100%;
+    }
+    /* Amélioration du style des inputs sur mobile */
+    input, textarea {
+        font-size: 16px !important; /* Évite le zoom automatique sur iOS */
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Chargement de tous les prestataires (avec l'ID)
 def charger_tous_artisans():
     conn = get_connection()
@@ -77,7 +98,7 @@ with st.sidebar:
 st.title("🇨🇮 DJASSA")
 st.write("La plateforme de référence pour trouver les meilleurs prestataires et services en Côte d'Ivoire.")
 
-# --- VUE PAGE DE CHAT DÉDIÉE AVEC SUPPORT PHOTOS ---
+# --- VUE PAGE DE CHAT DÉDIÉE AVEC SUPPORT PHOTOS & MOBILE FRIENDLY ---
 if st.session_state.chat_actif_id is not None:
     artisan_id = st.session_state.chat_actif_id
     artisan_nom = st.session_state.chat_actif_nom
@@ -95,8 +116,8 @@ if st.session_state.chat_actif_id is not None:
     else:
         messages_artisan = obtenir_messages(artisan_id)
         
-        # Zone d'affichage des bulles de messages
-        chat_container = st.container(height=420)
+        # Zone d'affichage des bulles de messages optimisée mobile
+        chat_container = st.container(height=400)
         with chat_container:
             if messages_artisan:
                 for msg in reversed(messages_artisan):
@@ -104,13 +125,13 @@ if st.session_state.chat_actif_id is not None:
                     
                     image_html = ""
                     if msg['image_url']:
-                        image_html = f"<br><img src='{msg['image_url']}' style='max-width: 220px; border-radius: 8px; margin-top: 6px;'/>"
+                        image_html = f"<br><img src='{msg['image_url']}' style='max-width: 100%; border-radius: 8px; margin-top: 6px;'/>"
                     
                     texte_contenu = f"<br>{msg['contenu']}" if msg['contenu'] else ""
                     
                     if est_expediteur_actuel:
                         st.markdown(f"""
-                        <div style="background-color: #1e3a8a; padding: 12px 16px; border-radius: 15px 15px 3px 15px; margin: 10px 0; margin-left: 25%; color: white; text-align: right; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        <div style="background-color: #1e3a8a; padding: 12px 16px; border-radius: 15px 15px 3px 15px; margin: 10px 0; margin-left: 15%; color: white; text-align: right; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                             <span style="font-size: 11px; color: #93c5fd; display: block; margin-bottom: 3px;">Moi ({msg['date_envoi']})</span>
                             {texte_contenu}
                             {image_html}
@@ -118,7 +139,7 @@ if st.session_state.chat_actif_id is not None:
                         """, unsafe_allow_html=True)
                     else:
                         st.markdown(f"""
-                        <div style="background-color: #374151; padding: 12px 16px; border-radius: 15px 15px 15px 3px; margin: 10px 0; margin-right: 25%; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                        <div style="background-color: #374151; padding: 12px 16px; border-radius: 15px 15px 15px 3px; margin: 10px 0; margin-right: 15%; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                             <span style="font-size: 11px; color: #cbd5e1; display: block; margin-bottom: 3px;">{msg['expediteur']} ({msg['date_envoi']})</span>
                             {texte_contenu}
                             {image_html}
@@ -127,10 +148,10 @@ if st.session_state.chat_actif_id is not None:
             else:
                 st.info("C'est le début de la conversation. Tapez 'Entrée' pour envoyer votre message instantanément !")
 
-        # Formulaire d'envoi instantané (appui sur Entrée pris en compte)
+        # Formulaire d'envoi instantané
         with st.form(f"form_chat_page_{artisan_id}", clear_on_submit=True):
             texte_msg = st.text_input("Votre message...", placeholder="Écrivez votre message et appuyez sur Entrée...")
-            photo_telechargee = st.file_uploader("📷 Joindre une photo (optionnel)", type=["png", "jpg", "jpeg"])
+            photo_telechargee = st.file_uploader("📷 Joindre une photo (panne, produit...)", type=["png", "jpg", "jpeg"])
             btn_envoyer = st.form_submit_button("Envoyer le message ou la photo 🚀", use_container_width=True, type="primary")
 
             if btn_envoyer:
@@ -248,10 +269,10 @@ if choix_menu == "🔍 Rechercher un prestataire":
     st.subheader("Espace de recherche")
     st.info(f"🔥 Déjà **{len(tous_artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
-    # 1. Recherche par nom (Appuyer sur Entrée valide automatiquement)
+    # 1. Recherche par nom
     st.markdown("### 🎯 Recherche directe par nom d'établissement")
     with st.form("form_recherche_nom"):
-        recherche_nom = st.text_input("Tapez le nom recherché (Appuyez sur Entrée pour valider)", placeholder="Ex: Kelo Kelo...")
+        recherche_nom = st.text_input("Tapez le nom recherché (Appuyez sur Entrée)", placeholder="Ex: Kelo Kelo...")
         lancer_recherche_nom = st.form_submit_button("Rechercher par nom", type="primary")
 
     if lancer_recherche_nom and recherche_nom.strip():
@@ -282,7 +303,7 @@ if choix_menu == "🔍 Rechercher un prestataire":
     communes_disponibles = ["Toutes les communes"] + sorted(list(set(art['commune'] for art in tous_artisans if art['commune'])))
 
     with st.form("form_recherche_criteres"):
-        metier_cherche = st.text_input("Métier ou secteur (Appuyez sur Entrée pour valider)")
+        metier_cherche = st.text_input("Métier ou secteur (Appuyez sur Entrée)")
         commune_selectionnee = st.selectbox("📍 Filtrer par commune", communes_disponibles)
         lancer_recherche_criteres = st.form_submit_button("Lancer la recherche par critères", type="primary")
 
@@ -310,14 +331,14 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 with st.container():
                     st.markdown(
                         f"""
-                        <div style="padding: 20px; border-radius: 10px; border: 1px solid #333333; margin-bottom: 10px; background-color: #1e1e1e;">
+                        <div style="padding: 15px; border-radius: 10px; border: 1px solid #333333; margin-bottom: 10px; background-color: #1e1e1e;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <h3 style="margin: 0; color: #3b82f6;">{artisan['nom']}</h3>
-                                <span style="background-color: #d97706; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold;">{badge}</span>
+                                <h3 style="margin: 0; color: #3b82f6; font-size: 18px;">{artisan['nom']}</h3>
+                                <span style="background-color: #d97706; color: white; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold;">{badge}</span>
                             </div>
-                            <p style="margin: 8px 0 5px 0; color: #e5e7eb;"><strong>{artisan['metier']}</strong> - 📍 {artisan['commune']}</p>
-                            <p style="margin: 0 0 10px 0; color: #fbbf24; font-size: 14px;">Avis : {etoiles_affichage} <em>({nb_avis} avis)</em></p>
-                            <p style="margin: 0 0 15px 0; color: #9ca3af; font-size: 14px;">{description}</p>
+                            <p style="margin: 8px 0 4px 0; color: #e5e7eb;"><strong>{artisan['metier']}</strong> - 📍 {artisan['commune']}</p>
+                            <p style="margin: 0 0 8px 0; color: #fbbf24; font-size: 13px;">Avis : {etoiles_affichage} <em>({nb_avis} avis)</em></p>
+                            <p style="margin: 0 0 10px 0; color: #9ca3af; font-size: 13px;">{description}</p>
                         </div>
                         """,
                         unsafe_allow_html=True
@@ -325,9 +346,9 @@ if choix_menu == "🔍 Rechercher un prestataire":
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">📞 {telephone_brut}</button></a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="{artisan["appel_url"]}" target="_self"><button style="background-color:#2563eb; color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold; font-size:13px;">📞 {telephone_brut}</button></a>', unsafe_allow_html=True)
                 with col2:
-                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px 16px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="{artisan["whatsapp_url"]}" target="_blank"><button style="background-color:#22c55e; color:white; padding:10px; border:none; border-radius:6px; cursor:pointer; width:100%; font-weight:bold; font-size:13px;">🟢 WhatsApp</button></a>', unsafe_allow_html=True)
                 
                 # Bouton Appel internet
                 cle_appel = f"appel_smart_{index_art}"
@@ -337,13 +358,13 @@ if choix_menu == "🔍 Rechercher un prestataire":
 
                 # --- BOUTON POUR OUVRIR LA PAGE DE CHAT DÉDIÉE ---
                 nb_msg = len(obtenir_messages(artisan_id))
-                if st.button(f"💬 Ouvrir la discussion en direct avec {artisan['nom']} ({nb_msg} messages)", key=f"btn_chat_{artisan_id}", use_container_width=True, type="primary"):
+                if st.button(f"💬 Discussion en direct avec {artisan['nom']} ({nb_msg})", key=f"btn_chat_{artisan_id}", use_container_width=True, type="primary"):
                     st.session_state.chat_actif_id = artisan_id
                     st.session_state.chat_actif_nom = artisan['nom']
                     st.rerun()
 
                 # --- MENU DÉROULANT : AVIS & NOTES ---
-                with st.expander(f"⭐ Voir ou laisser un avis pour {artisan['nom']}"):
+                with st.expander(f"⭐ Avis et notes pour {artisan['nom']}"):
                     if nb_avis > 0:
                         for avis in avis_artisan:
                             st.markdown(f"**{'⭐'*avis['note']}** - *{avis['commentaire']}*")
@@ -362,13 +383,13 @@ if choix_menu == "🔍 Rechercher un prestataire":
                             st.rerun()
 
                 texte_partage = urllib.parse.quote(f"Salut ! Je te partage ce contact trouvé sur DJASSA 🇨🇮 :\n*{artisan['nom']}* ({artisan['metier']}) à {artisan['commune']}.")
-                st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:13px; margin-top:5px;">📤 Recommander ce prestataire sur WhatsApp</button></a>', unsafe_allow_html=True)
+                st.markdown(f'<a href="https://wa.me/?text={texte_partage}" target="_blank"><button style="background-color:#0f766e; color:white; padding:8px; border:none; border-radius:6px; cursor:pointer; width:100%; font-size:12px; margin-top:5px;">📤 Recommander sur WhatsApp</button></a>', unsafe_allow_html=True)
                 st.markdown("<br>", unsafe_allow_html=True)
         else:
             st.warning("Aucun établissement ou prestataire trouvé pour cette recherche.")
             
     st.markdown("---")
-    st.subheader("🌟 Récemment ajoutés sur la plateforme")
+    st.subheader("🌟 Récemment ajoutés")
     if tous_artisans:
         derniers = tous_artisans[-3:]
         for art in reversed(derniers):
@@ -377,13 +398,13 @@ if choix_menu == "🔍 Rechercher un prestataire":
         st.write("Aucun établissement pour le moment.")
 
 elif choix_menu == "📝 Enregistrer un établissement":
-    st.subheader("Enregistrer un nouveau prestataire ou établissement")
+    st.subheader("Enregistrer un nouvel établissement")
     
     with st.form("form_enregistrement"):
         nom = st.text_input("Nom de l'établissement ou de l'artisan (ex: Kelo Kelo)")
         metier = st.text_input("Métier ou secteur (ex: Bar, Boulangerie, Hôtel)")
         commune = st.text_input("Commune (ex: Cocody, Yopougon, Marcory)")
-        description = st.text_area("Courte description des services proposés (ex: Situé à Cocody)")
+        description = st.text_area("Courte description des services proposés")
         badge = st.selectbox("Type de badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"])
         telephone = st.text_input("Numéro de téléphone (ex: +2250102030405)")
         
@@ -416,49 +437,49 @@ elif choix_menu == "📝 Enregistrer un établissement":
 elif choix_menu == "⚙️ Administration & Modération" and est_admin:
     st.subheader("🔒 Administration & Modération DJASSA")
     st.info(f"📊 Total Établissements : {len(tous_artisans)}")
-    st.write("Gestion, Attribution de Badges & Suppression des Faux Profils :")
+    st.write("Gestion, Attribution de Badges & Suppression :")
     
     if tous_artisans:
         st.markdown("---")
         conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, nom, metier, commune, badge FROM artisans")
-    db_artisans = cursor.fetchall()
-    conn.close()
-    
-    for index, art_db in enumerate(db_artisans):
-        art_id, art_nom, art_metier, art_commune, art_badge = art_db
-        with st.container():
-            st.markdown(
-                f"""
-                <div style="padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 10px; background-color: #1e1e1e;">
-                    <p style="margin: 0; color: #fff;"><strong>#{index+1} - {art_nom}</strong> ({art_metier} - {art_commune})</p>
-                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #aaa;">Badge actuel : <strong>{art_badge if art_badge else 'Professionnel'}</strong></p>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, nom, metier, commune, badge FROM artisans")
+        db_artisans = cursor.fetchall()
+        conn.close()
         
-        col_b, col_s = st.columns([2, 1])
-        with col_b:
-            nouveau_badge = st.selectbox("Modifier le badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"], key=f"badge_{art_id}")
-            if st.button("Valider Badge", key=f"val_badge_{art_id}"):
-                conn = get_connection()
-                cursor = conn.cursor()
-                cursor.execute("UPDATE artisans SET badge = ? WHERE id = ?", (nouveau_badge, art_id))
-                conn.commit()
-                conn.close()
-                st.success("Badge mis à jour avec succès dans SQLite !")
-                st.rerun()
-        with col_s:
-            if st.button("🗑️ Supprimer (Faux profil)", key=f"suppr_{art_id}", type="primary"):
-                conn = get_connection()
-                cursor = conn.cursor()
-                cursor.execute("DELETE FROM artisans WHERE id = ?", (art_id,))
-                conn.commit()
-                conn.close()
-                st.success(f"'{art_nom}' a été supprimé de la base de données !")
-                st.rerun()
-        st.markdown("<br>", unsafe_allow_html=True)
-else:
-    st.info("Aucun prestataire à modérer.")
+        for index, art_db in enumerate(db_artisans):
+            art_id, art_nom, art_metier, art_commune, art_badge = art_db
+            with st.container():
+                st.markdown(
+                    f"""
+                    <div style="padding: 12px; border-radius: 8px; border: 1px solid #444; margin-bottom: 8px; background-color: #1e1e1e;">
+                        <p style="margin: 0; color: #fff; font-size: 14px;"><strong>#{index+1} - {art_nom}</strong> ({art_metier} - {art_commune})</p>
+                        <p style="margin: 4px 0 0 0; font-size: 12px; color: #aaa;">Badge actuel : <strong>{art_badge if art_badge else 'Professionnel'}</strong></p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            
+            col_b, col_s = st.columns([2, 1])
+            with col_b:
+                nouveau_badge = st.selectbox("Modifier le badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"], key=f"badge_{art_id}")
+                if st.button("Valider Badge", key=f"val_badge_{art_id}"):
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE artisans SET badge = ? WHERE id = ?", (nouveau_badge, art_id))
+                    conn.commit()
+                    conn.close()
+                    st.success("Badge mis à jour avec succès !")
+                    st.rerun()
+            with col_s:
+                if st.button("🗑️ Supprimer", key=f"suppr_{art_id}", type="primary"):
+                    conn = get_connection()
+                    cursor = conn.cursor()
+                    cursor.execute("DELETE FROM artisans WHERE id = ?", (art_id,))
+                    conn.commit()
+                    conn.close()
+                    st.success(f"'{art_nom}' supprimé !")
+                    st.rerun()
+            st.markdown("<br>", unsafe_allow_html=True)
+    else:
+        st.info("Aucun prestataire à modérer.")
