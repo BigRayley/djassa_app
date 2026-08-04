@@ -1,15 +1,4 @@
-from database import (
-    get_connection,
-    init_db,
-    rechercher_artisans_intelligent,
-    ajouter_artisan,
-    ajouter_avis,
-    obtenir_avis,
-    envoyer_message,
-    obtenir_messages,
-    verifier_connexion_artisan
-)
-
+from database import get_connection, init_db, rechercher_artisans_intelligent, ajouter_artisan, ajouter_avis, obtenir_avis, envoyer_message, obtenir_messages, verifier_connexion_artisan
 st.set_page_config(page_title="DJASSA - Bêta", page_icon="🇨🇮", layout="centered")
 
 # --- CSS PERSONNALISÉ MOBILE FIRST ---
