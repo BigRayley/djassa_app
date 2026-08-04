@@ -1,12 +1,14 @@
-import base64
-import urllib.parse
-import streamlit as st
-import streamlit.components.v1 as components
-import pandas as pd
-from database import get_connection, init_db, rechercher_artisans_intelligent, ajouter_avis, obtenir_avis, envoyer_message, obtenir_messages, verifier_connexion_artisan
-
-# Initialisation de la base de données SQLite
-init_db()
+from database import (
+    get_connection,
+    init_db,
+    rechercher_artisans_intelligent,
+    ajouter_artisan,
+    ajouter_avis,
+    obtenir_avis,
+    envoyer_message,
+    obtenir_messages,
+    verifier_connexion_artisan
+)
 
 st.set_page_config(page_title="DJASSA - Bêta", page_icon="🇨🇮", layout="centered")
 
