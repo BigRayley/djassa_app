@@ -57,14 +57,15 @@ est_admin = params.get("admin") == "djassa_admin_secret_2026"
 with st.sidebar:
     st.header("👤 Votre Session")
     if not st.session_state.utilisateur_pseudo:
-        pseudo_saisi = st.text_input("Entrez votre prénom ou pseudo :", placeholder="Ex: Jean Kouassi")
-        if st.button("Valider mon identité"):
-            if pseudo_saisi.strip():
-                st.session_state.utilisateur_pseudo = pseudo_saisi.strip()
-                st.success(f"Bienvenue, {st.session_state.utilisateur_pseudo} !")
-                st.rerun()
-            else:
-                st.warning("Veuillez entrer un pseudo valide.")
+        with st.form("form_pseudo"):
+            pseudo_saisi = st.text_input("Votre prénom ou pseudo :", placeholder="Ex: Jean Kouassi")
+            btn_pseudo = st.form_submit_button("Valider mon identité", type="primary")
+            if btn_pseudo:
+                if pseudo_saisi.strip():
+                    st.session_state.utilisateur_pseudo = pseudo_saisi.strip()
+                    st.rerun()
+                else:
+                    st.warning("Veuillez entrer un pseudo valide.")
     else:
         st.info(f"Connecté en tant que : **{st.session_state.utilisateur_pseudo}**")
         if st.button("Modifier mon pseudo"):
@@ -101,7 +102,6 @@ if st.session_state.chat_actif_id is not None:
                 for msg in reversed(messages_artisan):
                     est_expediteur_actuel = (msg['expediteur'] == st.session_state.utilisateur_pseudo)
                     
-                    # Construction du contenu image si présent
                     image_html = ""
                     if msg['image_url']:
                         image_html = f"<br><img src='{msg['image_url']}' style='max-width: 220px; border-radius: 8px; margin-top: 6px;'/>"
@@ -125,11 +125,11 @@ if st.session_state.chat_actif_id is not None:
                         </div>
                         """, unsafe_allow_html=True)
             else:
-                st.info("C'est le début de la conversation. Envoyez un message ou une photo (panne, produit...) au prestataire !")
+                st.info("C'est le début de la conversation. Tapez 'Entrée' pour envoyer votre message instantanément !")
 
-        # Formulaire d'envoi avec texte ET photo
+        # Formulaire d'envoi instantané (appui sur Entrée pris en compte)
         with st.form(f"form_chat_page_{artisan_id}", clear_on_submit=True):
-            texte_msg = st.text_input("Votre message...", placeholder="Décrivez votre besoin ou posez votre question...")
+            texte_msg = st.text_input("Votre message...", placeholder="Écrivez votre message et appuyez sur Entrée...")
             photo_telechargee = st.file_uploader("📷 Joindre une photo (optionnel)", type=["png", "jpg", "jpeg"])
             btn_envoyer = st.form_submit_button("Envoyer le message ou la photo 🚀", use_container_width=True, type="primary")
 
@@ -248,14 +248,15 @@ if choix_menu == "🔍 Rechercher un prestataire":
     st.subheader("Espace de recherche")
     st.info(f"🔥 Déjà **{len(tous_artisans)}** prestataire(s) et établissement(s) répertoriés sur la plateforme !")
     
-    # 1. Recherche par nom
+    # 1. Recherche par nom (Appuyer sur Entrée valide automatiquement)
     st.markdown("### 🎯 Recherche directe par nom d'établissement")
     with st.form("form_recherche_nom"):
-        recherche_nom = st.text_input("Tapez le nom recherché (ex: Kelo Kelo)", placeholder="Ex: Kelo Kelo...")
+        recherche_nom = st.text_input("Tapez le nom recherché (Appuyez sur Entrée pour valider)", placeholder="Ex: Kelo Kelo...")
         lancer_recherche_nom = st.form_submit_button("Rechercher par nom", type="primary")
 
     if lancer_recherche_nom and recherche_nom.strip():
         st.session_state.resultats_recherche = rechercher_artisans_intelligent(query=recherche_nom.strip(), commune_filtre="")
+        st.rerun()
 
     st.markdown("---")
     
@@ -276,16 +277,18 @@ if choix_menu == "🔍 Rechercher un prestataire":
             with cols_metiers[i]:
                 if st.button(met, use_container_width=True, key=f"btn_met_{i}"):
                     st.session_state.resultats_recherche = rechercher_artisans_intelligent(query=met, commune_filtre="")
+                    st.rerun()
 
     communes_disponibles = ["Toutes les communes"] + sorted(list(set(art['commune'] for art in tous_artisans if art['commune'])))
 
     with st.form("form_recherche_criteres"):
-        metier_cherche = st.text_input("Métier ou secteur (ex: Bar, Boulangerie, Hôtel)")
+        metier_cherche = st.text_input("Métier ou secteur (Appuyez sur Entrée pour valider)")
         commune_selectionnee = st.selectbox("📍 Filtrer par commune", communes_disponibles)
         lancer_recherche_criteres = st.form_submit_button("Lancer la recherche par critères", type="primary")
 
     if lancer_recherche_criteres:
         st.session_state.resultats_recherche = rechercher_artisans_intelligent(query=metier_cherche.strip(), commune_filtre=commune_selectionnee)
+        st.rerun()
 
     # --- AFFICHAGE DES RÉSULTATS ---
     if st.session_state.resultats_recherche is not None:
@@ -418,44 +421,44 @@ elif choix_menu == "⚙️ Administration & Modération" and est_admin:
     if tous_artisans:
         st.markdown("---")
         conn = get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, nom, metier, commune, badge FROM artisans")
-        db_artisans = cursor.fetchall()
-        conn.close()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, nom, metier, commune, badge FROM artisans")
+    db_artisans = cursor.fetchall()
+    conn.close()
+    
+    for index, art_db in enumerate(db_artisans):
+        art_id, art_nom, art_metier, art_commune, art_badge = art_db
+        with st.container():
+            st.markdown(
+                f"""
+                <div style="padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 10px; background-color: #1e1e1e;">
+                    <p style="margin: 0; color: #fff;"><strong>#{index+1} - {art_nom}</strong> ({art_metier} - {art_commune})</p>
+                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #aaa;">Badge actuel : <strong>{art_badge if art_badge else 'Professionnel'}</strong></p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
         
-        for index, art_db in enumerate(db_artisans):
-            art_id, art_nom, art_metier, art_commune, art_badge = art_db
-            with st.container():
-                st.markdown(
-                    f"""
-                    <div style="padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 10px; background-color: #1e1e1e;">
-                        <p style="margin: 0; color: #fff;"><strong>#{index+1} - {art_nom}</strong> ({art_metier} - {art_commune})</p>
-                        <p style="margin: 5px 0 0 0; font-size: 13px; color: #aaa;">Badge actuel : <strong>{art_badge if art_badge else 'Professionnel'}</strong></p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-            
-            col_b, col_s = st.columns([2, 1])
-            with col_b:
-                nouveau_badge = st.selectbox("Modifier le badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"], key=f"badge_{art_id}")
-                if st.button("Valider Badge", key=f"val_badge_{art_id}"):
-                    conn = get_connection()
-                    cursor = conn.cursor()
-                    cursor.execute("UPDATE artisans SET badge = ? WHERE id = ?", (nouveau_badge, art_id))
-                    conn.commit()
-                    conn.close()
-                    st.success("Badge mis à jour avec succès dans SQLite !")
-                    st.rerun()
-            with col_s:
-                if st.button("🗑️ Supprimer (Faux profil)", key=f"suppr_{art_id}", type="primary"):
-                    conn = get_connection()
-                    cursor = conn.cursor()
-                    cursor.execute("DELETE FROM artisans WHERE id = ?", (art_id,))
-                    conn.commit()
-                    conn.close()
-                    st.success(f"'{art_nom}' a été supprimé de la base de données !")
-                    st.rerun()
-            st.markdown("<br>", unsafe_allow_html=True)
-    else:
-        st.info("Aucun prestataire à modérer.")
+        col_b, col_s = st.columns([2, 1])
+        with col_b:
+            nouveau_badge = st.selectbox("Modifier le badge", ["⭐ Top Vendeur", "🛵 Livreur Pro", "⭐ Professionnel"], key=f"badge_{art_id}")
+            if st.button("Valider Badge", key=f"val_badge_{art_id}"):
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute("UPDATE artisans SET badge = ? WHERE id = ?", (nouveau_badge, art_id))
+                conn.commit()
+                conn.close()
+                st.success("Badge mis à jour avec succès dans SQLite !")
+                st.rerun()
+        with col_s:
+            if st.button("🗑️ Supprimer (Faux profil)", key=f"suppr_{art_id}", type="primary"):
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM artisans WHERE id = ?", (art_id,))
+                conn.commit()
+                conn.close()
+                st.success(f"'{art_nom}' a été supprimé de la base de données !")
+                st.rerun()
+        st.markdown("<br>", unsafe_allow_html=True)
+else:
+    st.info("Aucun prestataire à modérer.")
