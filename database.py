@@ -4,7 +4,7 @@ def init_db():
     conn = sqlite3.connect("djassa.db", check_same_thread=False)
     cursor = conn.cursor()
     
-    # 1. Table des artisans
+    # 1. Table des artisans (avec mot de passe et coordonnées GPS fictives/réelles pour Abidjan)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS artisans (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -14,7 +14,10 @@ def init_db():
             description TEXT,
             badge TEXT,
             appel_url TEXT,
-            whatsapp_url TEXT
+            whatsapp_url TEXT,
+            password TEXT DEFAULT '1234',
+            lat REAL DEFAULT 5.3600,
+            lon REAL DEFAULT -4.0083
         )
     """)
     
@@ -29,10 +32,9 @@ def init_db():
         )
     """)
 
-    # 3. Table des messages avec support d'images
-    cursor.execute("DROP TABLE IF EXISTS messages")
+    # 3. Table des messages
     cursor.execute("""
-        CREATE TABLE messages (
+        CREATE TABLE IF NOT EXISTS messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             artisan_id INTEGER NOT NULL,
             expediteur TEXT NOT NULL,
@@ -53,7 +55,7 @@ def rechercher_artisans_intelligent(query="", commune_filtre=""):
     conn = get_connection()
     cursor = conn.cursor()
     
-    sql = "SELECT id, nom, metier, commune, description, badge, appel_url, whatsapp_url FROM artisans WHERE 1=1"
+    sql = "SELECT id, nom, metier, commune, description, badge, appel_url, whatsapp_url, lat, lon FROM artisans WHERE 1=1"
     params = []
     
     if query:
@@ -72,7 +74,8 @@ def rechercher_artisans_intelligent(query="", commune_filtre=""):
     return [
         {
             "id": r[0], "nom": r[1], "metier": r[2], "commune": r[3],
-            "description": r[4], "badge": r[5], "appel_url": r[6], "whatsapp_url": r[7]
+            "description": r[4], "badge": r[5], "appel_url": r[6], "whatsapp_url": r[7],
+            "lat": r[8], "lon": r[9]
         } for r in lignes
     ]
 
@@ -105,3 +108,11 @@ def obtenir_messages(artisan_id):
     lignes = cursor.fetchall()
     conn.close()
     return [{"expediteur": r[0], "contenu": r[1], "image_url": r[2], "date_envoi": r[3]} for r in lignes]
+
+def verifier_connexion_artisan(nom_artisan, password):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, nom FROM artisans WHERE nom LIKE ? AND password = ?", (f"%{nom_artisan}%", password))
+    res = cursor.fetchone()
+    conn.close()
+    return res # Retourne (id, nom) si correct, sinon None
