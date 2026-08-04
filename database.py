@@ -1,53 +1,22 @@
-import sqlite3
+import psycopg2
+import os
 
-def init_db():
-    conn = sqlite3.connect("djassa.db", check_same_thread=False)
-    cursor = conn.cursor()
-    
-    cursor.execute("DROP TABLE IF EXISTS artisans")
-    cursor.execute("""
-        CREATE TABLE artisans (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nom TEXT NOT NULL,
-            metier TEXT NOT NULL,
-            commune TEXT NOT NULL,
-            description TEXT,
-            badge TEXT,
-            appel_url TEXT,
-            whatsapp_url TEXT,
-            password TEXT DEFAULT '1234',
-            lat REAL DEFAULT 5.3600,
-            lon REAL DEFAULT -4.0083
-        )
-    """)
-    
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS avis (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            artisan_id INTEGER NOT NULL,
-            note INTEGER NOT NULL,
-            commentaire TEXT,
-            FOREIGN KEY (artisan_id) REFERENCES artisans (id)
-        )
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            artisan_id INTEGER NOT NULL,
-            expediteur TEXT NOT NULL,
-            contenu TEXT,
-            image_url TEXT,
-            date_envoi DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (artisan_id) REFERENCES artisans (id)
-        )
-    """)
-    
-    conn.commit()
-    conn.close()
+# Colle ton URL Supabase complète entre les guillemets ci-dessous
+# Exemple : "postgresql://postgres.xxxxxx:ton_mot_de_passe@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
+postgresql://postgres:[YOUR-PASSWORD]@db.twbrxvmizmjbgpxxrdsq.supabase.co:5432/postgres
 
 def get_connection():
-    return sqlite3.connect("djassa.db", check_same_thread=False)
+    return psycopg2.connect(DATABASE_URL)
+
+def init_db():
+    # Avec Supabase, les tables sont déjà créées via l'éditeur SQL. 
+    # Cette fonction sert de vérification de connexion.
+    try:
+        conn = get_connection()
+        conn.close()
+        print("Connexion à Supabase réussie !")
+    except Exception as e:
+        print(f"Erreur de connexion à la base de données : {e}")
 
 def rechercher_artisans_intelligent(query="", commune_filtre=""):
     conn = get_connection()
@@ -57,12 +26,12 @@ def rechercher_artisans_intelligent(query="", commune_filtre=""):
     params = []
     
     if query:
-        sql += " AND (nom LIKE ? OR metier LIKE ? OR description LIKE ?)"
+        sql += " AND (nom ILIKE %s OR metier ILIKE %s OR description ILIKE %s)"
         q = f"%{query}%"
         params.extend([q, q, q])
         
     if commune_filtre and commune_filtre != "Toutes les communes":
-        sql += " AND commune LIKE ?"
+        sql += " AND commune ILIKE %s"
         params.append(f"%{commune_filtre}%")
         
     cursor.execute(sql, params)
@@ -80,14 +49,14 @@ def rechercher_artisans_intelligent(query="", commune_filtre=""):
 def ajouter_avis(artisan_id, note, commentaire):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO avis (artisan_id, note, commentaire) VALUES (?, ?, ?)", (artisan_id, note, commentaire))
+    cursor.execute("INSERT INTO avis (artisan_id, note, commentaire) VALUES (%s, %s, %s)", (artisan_id, note, commentaire))
     conn.commit()
     conn.close()
 
 def obtenir_avis(artisan_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT note, commentaire FROM avis WHERE artisan_id = ?", (artisan_id,))
+    cursor.execute("SELECT note, commentaire FROM avis WHERE artisan_id = %s", (artisan_id,))
     lignes = cursor.fetchall()
     conn.close()
     return [{"note": r[0], "commentaire": r[1]} for r in lignes]
@@ -95,14 +64,14 @@ def obtenir_avis(artisan_id):
 def envoyer_message(artisan_id, expediteur, contenu, image_url=None):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO messages (artisan_id, expediteur, contenu, image_url) VALUES (?, ?, ?, ?)", (artisan_id, expediteur, contenu, image_url))
+    cursor.execute("INSERT INTO messages (artisan_id, expediteur, contenu, image_url) VALUES (%s, %s, %s, %s)", (artisan_id, expediteur, contenu, image_url))
     conn.commit()
     conn.close()
 
 def obtenir_messages(artisan_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT expediteur, contenu, image_url, date_envoi FROM messages WHERE artisan_id = ? ORDER BY date_envoi DESC", (artisan_id,))
+    cursor.execute("SELECT expediteur, contenu, image_url, date_envoi FROM messages WHERE artisan_id = %s ORDER BY date_envoi DESC", (artisan_id,))
     lignes = cursor.fetchall()
     conn.close()
     return [{"expediteur": r[0], "contenu": r[1], "image_url": r[2], "date_envoi": r[3]} for r in lignes]
@@ -110,7 +79,24 @@ def obtenir_messages(artisan_id):
 def verifier_connexion_artisan(nom_artisan, password):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, nom FROM artisans WHERE nom LIKE ? AND password = ?", (f"%{nom_artisan}%", password))
+    cursor.execute("SELECT id, nom FROM artisans WHERE nom ILIKE %s AND password = %s", (f"%{nom_artisan}%", password))
     res = cursor.fetchone()
     conn.close()
     return res
+# Dans ton app.py, lors de la soumission du formulaire :
+if st.button("Valider l'enregistrement"):
+    if nom and metier:
+        # Appel de la fonction pour enregistrer dans Supabase
+        ajouter_artisan(
+            nom=nom,
+            metier=metier,
+            commune=commune,
+            description=description,
+            badge=badge,
+            appel_url=appel_url,
+            whatsapp_url=whatsapp_url,
+            password=password
+        )
+        st.success("Établissement enregistré avec succès dans le cloud !")
+    else:
+        st.error("Veuillez remplir au moins le nom et le métier.")
