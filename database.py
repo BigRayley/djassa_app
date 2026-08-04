@@ -1,6 +1,5 @@
 import psycopg2
-
-DATABASE_URL = "postgresql://postgres:Armelo0731@@db.twbrxvmizmjbgpxxrdsq.supabase.co:5432/postgres"
+postgresql://postgres.twbrxvmizmjbgpxxrdsq:Armelo0731@aws-0-eu-west-1.pooler.supabase.com:6543/postgres
 def get_connection():
     return psycopg2.connect(DATABASE_URL)
 
