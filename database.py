@@ -1,7 +1,6 @@
 import psycopg2
 
-# Remplace l'URL ci-dessous par ton URL de connexion directe Supabase (avec ton mot de passe)
-postgresql://postgres:ton_vrai_mot_de_passe@db.twbrxvmizmjbgpxxrdsq.supabase.co:5432/postgres
+DATABASE_URL = "postgresql://postgres:ton_vrai_mot_de_passe@db.twbrxvmizmjbgpxxrdsq.supabase.co:5432/postgres"
 
 def get_connection():
     return psycopg2.connect(DATABASE_URL)
@@ -10,9 +9,8 @@ def init_db():
     try:
         conn = get_connection()
         conn.close()
-        print("Connexion à Supabase réussie !")
     except Exception as e:
-        print(f"Erreur de connexion à la base de données : {e}")
+        print(f"Erreur : {e}")
 
 def ajouter_artisan(nom, metier, commune, description, badge, appel_url, whatsapp_url, password="1234", lat=5.3600, lon=-4.0083):
     conn = get_connection()
@@ -27,30 +25,19 @@ def ajouter_artisan(nom, metier, commune, description, badge, appel_url, whatsap
 def rechercher_artisans_intelligent(query="", commune_filtre=""):
     conn = get_connection()
     cursor = conn.cursor()
-    
     sql = "SELECT id, nom, metier, commune, description, badge, appel_url, whatsapp_url, lat, lon FROM artisans WHERE 1=1"
     params = []
-    
     if query:
         sql += " AND (nom ILIKE %s OR metier ILIKE %s OR description ILIKE %s)"
         q = f"%{query}%"
         params.extend([q, q, q])
-        
     if commune_filtre and commune_filtre != "Toutes les communes":
         sql += " AND commune ILIKE %s"
         params.append(f"%{commune_filtre}%")
-        
     cursor.execute(sql, params)
     lignes = cursor.fetchall()
     conn.close()
-    
-    return [
-        {
-            "id": r[0], "nom": r[1], "metier": r[2], "commune": r[3],
-            "description": r[4], "badge": r[5], "appel_url": r[6], "whatsapp_url": r[7],
-            "lat": r[8], "lon": r[9]
-        } for r in lignes
-    ]
+    return [{"id": r[0], "nom": r[1], "metier": r[2], "commune": r[3], "description": r[4], "badge": r[5], "appel_url": r[6], "whatsapp_url": r[7], "lat": r[8], "lon": r[9]} for r in lignes]
 
 def ajouter_avis(artisan_id, note, commentaire):
     conn = get_connection()
