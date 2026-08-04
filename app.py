@@ -1,7 +1,6 @@
 import streamlit as st
 import database
 
-# Initialisation de la base de données Supabase
 database.init_db()
 
 st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="centered")
@@ -9,7 +8,6 @@ st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="centered")
 st.title("🇨🇮 DJASSA")
 st.subheader("Connectez-vous aux artisans et prestataires en Côte d'Ivoire")
 
-# Menu de navigation principal
 menu = ["Accueil / Recherche", "Espace Prestataire (Inscription / Connexion)"]
 choix = st.sidebar.selectbox("Navigation", menu)
 
