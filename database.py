@@ -1,5 +1,7 @@
 import psycopg2
-postgresql://postgres.twbrxvmizmjbgpxxrdsq:Armelo0731@aws-0-eu-west-1.pooler.supabase.com:6543/postgres
+
+DATABASE_URL = "postgresql://postgres:Armelo0731@@db.twbrxvmizmjbgpxxrdsq.supabase.co:5432/postgres"
+
 def get_connection():
     return psycopg2.connect(DATABASE_URL)
 
@@ -8,7 +10,7 @@ def init_db():
         conn = get_connection()
         conn.close()
     except Exception as e:
-        print(f"Erreur : {e}")
+        print(f"Erreur DB: {e}")
 
 def ajouter_artisan(nom, metier, commune, description, badge, appel_url, whatsapp_url, password="1234", lat=5.3600, lon=-4.0083):
     conn = get_connection()
