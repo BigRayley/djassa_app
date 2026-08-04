@@ -1,6 +1,7 @@
 import psycopg2
 
-DATABASE_URL = "postgresql://postgres:Armelo0731@@db.twbrxvmizmjbgpxxrdsq.supabase.co:5432/postgres"
+# URL de connexion avec le mot de passe encodé (%40 à la place de @)
+DATABASE_URL = "postgresql://postgres:Armelo0731%40db.twbrxvmizmjbgpxxrdsq.supabase.co:5432/postgres"
 
 def get_connection():
     return psycopg2.connect(DATABASE_URL)
