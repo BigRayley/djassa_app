@@ -1,22 +1,28 @@
 import psycopg2
-import os
 
-# Colle ton URL Supabase complète entre les guillemets ci-dessous
-# Exemple : "postgresql://postgres.xxxxxx:ton_mot_de_passe@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
-postgresql://postgres:[YOUR-PASSWORD]@db.twbrxvmizmjbgpxxrdsq.supabase.co:5432/postgres
+# Remplace l'URL ci-dessous par ton URL de connexion directe Supabase (avec ton mot de passe)
+postgresql://postgres:ton_vrai_mot_de_passe@db.twbrxvmizmjbgpxxrdsq.supabase.co:5432/postgres
 
 def get_connection():
     return psycopg2.connect(DATABASE_URL)
 
 def init_db():
-    # Avec Supabase, les tables sont déjà créées via l'éditeur SQL. 
-    # Cette fonction sert de vérification de connexion.
     try:
         conn = get_connection()
         conn.close()
         print("Connexion à Supabase réussie !")
     except Exception as e:
         print(f"Erreur de connexion à la base de données : {e}")
+
+def ajouter_artisan(nom, metier, commune, description, badge, appel_url, whatsapp_url, password="1234", lat=5.3600, lon=-4.0083):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO artisans (nom, metier, commune, description, badge, appel_url, whatsapp_url, password, lat, lon)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, (nom, metier, commune, description, badge, appel_url, whatsapp_url, password, lat, lon))
+    conn.commit()
+    conn.close()
 
 def rechercher_artisans_intelligent(query="", commune_filtre=""):
     conn = get_connection()
@@ -83,20 +89,3 @@ def verifier_connexion_artisan(nom_artisan, password):
     res = cursor.fetchone()
     conn.close()
     return res
-# Dans ton app.py, lors de la soumission du formulaire :
-if st.button("Valider l'enregistrement"):
-    if nom and metier:
-        # Appel de la fonction pour enregistrer dans Supabase
-        ajouter_artisan(
-            nom=nom,
-            metier=metier,
-            commune=commune,
-            description=description,
-            badge=badge,
-            appel_url=appel_url,
-            whatsapp_url=whatsapp_url,
-            password=password
-        )
-        st.success("Établissement enregistré avec succès dans le cloud !")
-    else:
-        st.error("Veuillez remplir au moins le nom et le métier.")
