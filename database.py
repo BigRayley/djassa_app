@@ -2,11 +2,11 @@ import psycopg2
 
 def get_connection():
     return psycopg2.connect(
-        aws-0-eu-west-1.pooler.supabase.com,  # Si tu as une autre région dans Supabase, remplace l'hôte ici
-        port=6543,                                       # Port du pooler IPv4
+        host="aws-0-eu-west-1.pooler.supabase.com",
+        port=6543,
         dbname="postgres",
-        user="postgres.twbrxvmizmjbgpxxrdsq",            # Identifiant complet Supabase Pooler
-        password="Armelo0731@"                           # Ton mot de passe tel quel !
+        user="postgres.twbrxvmizmjbgpxxrdsq",
+        password="Armelo0731@"
     )
 
 def init_db():
