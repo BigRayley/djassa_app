@@ -5,20 +5,15 @@ import database
 
 database.init_db()
 
-# Configuration de la page
 st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="centered")
 
-# --- INJECTION DE CSS POUR LE DESIGN (UI) ---
 st.markdown("""
     <style>
-    /* Cacher le menu par défaut de Streamlit et le footer */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-
-    /* Design des boutons principaux */
     .stButton>button {
-        background-color: #FF8C00; /* Orange dynamique */
+        background-color: #FF8C00;
         color: white !important;
         border-radius: 8px;
         border: none;
@@ -30,8 +25,6 @@ st.markdown("""
         box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
         transform: scale(1.02);
     }
-
-    /* Design des onglets et expanders (cartes artisans) */
     .streamlit-expanderHeader {
         background-color: #F8F9FA;
         border-radius: 8px;
@@ -39,8 +32,6 @@ st.markdown("""
         font-weight: bold;
         font-size: 16px;
     }
-    
-    /* Titre principal personnalisé */
     .titre-djassa {
         text-align: center;
         color: #2C3E50;
@@ -57,12 +48,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Affichage du titre avec notre nouveau style
 st.markdown('<div class="titre-djassa">🇨🇮 DJASSA</div>', unsafe_allow_html=True)
 st.markdown('<div class="sous-titre">Connectez-vous aux artisans et prestataires en Côte d\'Ivoire</div>', unsafe_allow_html=True)
 
-menu = ["Accueil / Recherche", "Espace Prestataire (Inscription / Connexion)", "Espace Administrateur"]
+# --- NOUVEAU MENU ---
+menu = ["Accueil / Recherche", "Pharmacies de Garde", "Espace Prestataire (Inscription / Connexion)", "Espace Administrateur"]
 choix = st.sidebar.selectbox("Navigation", menu)
+
+communes_liste = ["Toutes les communes", "Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"]
 
 if choix == "Accueil / Recherche":
     st.header("🔍 Rechercher un service ou un artisan")
@@ -71,8 +64,7 @@ if choix == "Accueil / Recherche":
     with col1:
         recherche_nom = st.text_input("Nom de l'artisan / entreprise")
     with col2:
-        communes_dispo = ["Toutes les communes", "Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"]
-        commune_filtre = st.selectbox("Commune", communes_dispo)
+        commune_filtre = st.selectbox("Commune", communes_liste)
     with col3:
         metiers_dispo = ["Tous les services", "Plombier", "Menuisier", "Électricien", "Maçon", "Peintre", "Climatisation", "Mécanicien", "Couturier"]
         metier_filtre = st.selectbox("Service / Métier", metiers_dispo)
@@ -163,6 +155,27 @@ if choix == "Accueil / Recherche":
                         st.success("Avis ajouté avec succès !")
                         st.rerun()
 
+# --- NOUVEL ONGLET PHARMACIES ---
+elif choix == "Pharmacies de Garde":
+    st.header("🏥 Pharmacies de Garde")
+    st.write("Trouvez rapidement les pharmacies ouvertes pour les urgences cette semaine.")
+    
+    commune_pharma = st.selectbox("Sélectionnez votre commune :", communes_liste)
+    
+    pharmacies_trouvees = database.obtenir_pharmacies(commune_filtre=commune_pharma)
+    
+    if pharmacies_trouvees:
+        for ph in pharmacies_trouvees:
+            with st.container():
+                st.subheader(f"💊 {ph['nom']}")
+                st.write(f"📍 **Commune :** {ph['commune']}")
+                st.write(f"🗺️ **Localisation :** {ph['localisation']}")
+                if ph['contact']:
+                    st.link_button("📞 Appeler la pharmacie", f"tel:{ph['contact']}")
+                st.divider()
+    else:
+        st.info("Aucune pharmacie de garde enregistrée pour cette commune actuellement.")
+
 elif choix == "Espace Prestataire (Inscription / Connexion)":
     st.header("🛠️ Espace Prestataire")
     
@@ -218,7 +231,7 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
             with st.form("form_inscription"):
                 nom = st.text_input("Nom de l'entreprise ou de l'artisan")
                 metier = st.text_input("Métier / Service (ex: Plombier, Menuisier...)")
-                commune = st.selectbox("Commune", ["Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"])
+                commune = st.selectbox("Commune", communes_liste[1:])
                 description = st.text_area("Description de vos services")
                 badge = st.text_input("Badge (ex: Vérifié, Professionnel...)")
                 appel_url = st.text_input("Lien d'appel (ex: tel:+225...)")
@@ -229,16 +242,7 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
                 
                 if submit_artisan:
                     if nom and metier and password:
-                        database.ajouter_artisan(
-                            nom=nom,
-                            metier=metier,
-                            commune=commune,
-                            description=description,
-                            badge=badge,
-                            appel_url=appel_url,
-                            whatsapp_url=whatsapp_url,
-                            password=password
-                        )
+                        database.ajouter_artisan(nom, metier, commune, description, badge, appel_url, whatsapp_url, password)
                         st.success("Établissement enregistré avec succès dans le cloud !")
                     else:
                         st.error("Veuillez remplir au moins le nom, le métier et le mot de passe.")
@@ -272,6 +276,26 @@ elif choix == "Espace Administrateur":
         col1.metric("Prestataires inscrits", nb_artisans)
         col2.metric("Avis publiés", nb_avis)
         col3.metric("Messages envoyés", nb_messages)
+        
+        st.markdown("---")
+        
+        # --- GESTION DES PHARMACIES PAR L'ADMIN ---
+        st.subheader("🏥 Gérer les Pharmacies de Garde")
+        with st.form("form_ajout_pharma"):
+            p_nom = st.text_input("Nom de la pharmacie (ex: Pharmacie des Lagunes)")
+            p_commune = st.selectbox("Commune", communes_liste[1:])
+            p_contact = st.text_input("Contact (ex: +225...)")
+            p_loc = st.text_input("Localisation précise")
+            
+            if st.form_submit_button("Ajouter cette pharmacie"):
+                database.ajouter_pharmacie(p_nom, p_commune, p_contact, p_loc)
+                st.success(f"Pharmacie {p_nom} ajoutée avec succès !")
+                st.rerun()
+                
+        if st.button("🗑️ Vider la liste des pharmacies (Nouvelle semaine)"):
+            database.vider_pharmacies()
+            st.success("Liste des pharmacies vidée.")
+            st.rerun()
         
         st.markdown("---")
         

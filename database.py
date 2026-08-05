@@ -1,9 +1,7 @@
 import psycopg2
 import hashlib
 
-# --- FONCTION DE CRYPTAGE ---
 def crypter_mot_de_passe(password):
-    """Transforme le mot de passe en un code indéchiffrable (SHA-256)"""
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 def get_connection():
@@ -59,15 +57,24 @@ def init_db():
                 description TEXT
             );
         """)
+        # --- NOUVELLE TABLE : PHARMACIES ---
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS pharmacies (
+                id SERIAL PRIMARY KEY,
+                nom TEXT,
+                commune TEXT,
+                contact TEXT,
+                localisation TEXT,
+                garde_active BOOLEAN DEFAULT TRUE
+            );
+        """)
         conn.commit()
         conn.close()
     except Exception as e:
         print(f"Erreur DB init: {e}")
 
 def ajouter_artisan(nom, metier, commune, description, badge, appel_url, whatsapp_url, password="1234", lat=5.3600, lon=-4.0083):
-    # On crypte le mot de passe avant de l'envoyer dans la base de données
     password_crypte = crypter_mot_de_passe(password)
-    
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
@@ -135,12 +142,9 @@ def obtenir_messages(artisan_id):
     return [{"expediteur": r[0], "contenu": r[1], "date_envoi": r[2]} for r in lignes]
 
 def verifier_connexion_artisan(nom_artisan, password):
-    # On crypte le mot de passe tapé par l'utilisateur pour le comparer avec celui de la base
     password_crypte = crypter_mot_de_passe(password)
-    
     conn = get_connection()
     cursor = conn.cursor()
-    # On compare maintenant avec le mot de passe crypté
     cursor.execute("SELECT id, nom FROM artisans WHERE nom ILIKE %s AND password = %s", (f"%{nom_artisan}%", password_crypte))
     res = cursor.fetchone()
     conn.close()
@@ -188,5 +192,32 @@ def supprimer_artisan(artisan_id):
     cursor.execute("DELETE FROM messages WHERE artisan_id = %s", (artisan_id,))
     cursor.execute("DELETE FROM avis WHERE artisan_id = %s", (artisan_id,))
     cursor.execute("DELETE FROM artisans WHERE id = %s", (artisan_id,))
+    conn.commit()
+    conn.close()
+
+# --- NOUVELLES FONCTIONS PHARMACIES ---
+def ajouter_pharmacie(nom, commune, contact, localisation):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO pharmacies (nom, commune, contact, localisation) VALUES (%s, %s, %s, %s)", (nom, commune, contact, localisation))
+    conn.commit()
+    conn.close()
+
+def obtenir_pharmacies(commune_filtre=""):
+    conn = get_connection()
+    cursor = conn.cursor()
+    if commune_filtre and commune_filtre != "Toutes les communes":
+        cursor.execute("SELECT nom, commune, contact, localisation FROM pharmacies WHERE garde_active = TRUE AND commune ILIKE %s", (f"%{commune_filtre}%",))
+    else:
+        cursor.execute("SELECT nom, commune, contact, localisation FROM pharmacies WHERE garde_active = TRUE")
+    lignes = cursor.fetchall()
+    conn.close()
+    return [{"nom": r[0], "commune": r[1], "contact": r[2], "localisation": r[3]} for r in lignes]
+
+def vider_pharmacies():
+    """Permet à l'admin de vider l'ancienne liste pour mettre la nouvelle semaine"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM pharmacies")
     conn.commit()
     conn.close()
