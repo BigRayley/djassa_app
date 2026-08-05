@@ -1,4 +1,10 @@
 import psycopg2
+import hashlib
+
+# --- FONCTION DE CRYPTAGE ---
+def crypter_mot_de_passe(password):
+    """Transforme le mot de passe en un code indéchiffrable (SHA-256)"""
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 def get_connection():
     return psycopg2.connect(
@@ -23,7 +29,7 @@ def init_db():
                 badge TEXT,
                 appel_url TEXT,
                 whatsapp_url TEXT,
-                password TEXT DEFAULT '1234',
+                password TEXT,
                 lat FLOAT DEFAULT 5.3600,
                 lon FLOAT DEFAULT -4.0083
             );
@@ -45,7 +51,6 @@ def init_db():
                 date_envoi TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
-        # --- NOUVELLE TABLE POUR LE PORTFOLIO ---
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS portfolio (
                 id SERIAL PRIMARY KEY,
@@ -60,12 +65,15 @@ def init_db():
         print(f"Erreur DB init: {e}")
 
 def ajouter_artisan(nom, metier, commune, description, badge, appel_url, whatsapp_url, password="1234", lat=5.3600, lon=-4.0083):
+    # On crypte le mot de passe avant de l'envoyer dans la base de données
+    password_crypte = crypter_mot_de_passe(password)
+    
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO artisans (nom, metier, commune, description, badge, appel_url, whatsapp_url, password, lat, lon)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-    """, (nom, metier, commune, description, badge, appel_url, whatsapp_url, password, lat, lon))
+    """, (nom, metier, commune, description, badge, appel_url, whatsapp_url, password_crypte, lat, lon))
     conn.commit()
     conn.close()
 
@@ -127,14 +135,17 @@ def obtenir_messages(artisan_id):
     return [{"expediteur": r[0], "contenu": r[1], "date_envoi": r[2]} for r in lignes]
 
 def verifier_connexion_artisan(nom_artisan, password):
+    # On crypte le mot de passe tapé par l'utilisateur pour le comparer avec celui de la base
+    password_crypte = crypter_mot_de_passe(password)
+    
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, nom FROM artisans WHERE nom ILIKE %s AND password = %s", (f"%{nom_artisan}%", password))
+    # On compare maintenant avec le mot de passe crypté
+    cursor.execute("SELECT id, nom FROM artisans WHERE nom ILIKE %s AND password = %s", (f"%{nom_artisan}%", password_crypte))
     res = cursor.fetchone()
     conn.close()
     return res
 
-# --- NOUVELLES FONCTIONS PORTFOLIO ---
 def ajouter_image_portfolio(artisan_id, image_b64, description=""):
     conn = get_connection()
     cursor = conn.cursor()
@@ -149,7 +160,7 @@ def obtenir_portfolio(artisan_id):
     lignes = cursor.fetchall()
     conn.close()
     return [{"image_b64": r[0], "description": r[1]} for r in lignes]
-# --- NOUVELLES FONCTIONS ADMINISTRATEUR ---
+
 def obtenir_toutes_les_stats():
     conn = get_connection()
     cursor = conn.cursor()
@@ -173,7 +184,6 @@ def obtenir_tous_les_artisans_admin():
 def supprimer_artisan(artisan_id):
     conn = get_connection()
     cursor = conn.cursor()
-    # Il faut supprimer les données liées (messages, avis, portfolio) avant de supprimer l'artisan
     cursor.execute("DELETE FROM portfolio WHERE artisan_id = %s", (artisan_id,))
     cursor.execute("DELETE FROM messages WHERE artisan_id = %s", (artisan_id,))
     cursor.execute("DELETE FROM avis WHERE artisan_id = %s", (artisan_id,))
