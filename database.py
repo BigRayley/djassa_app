@@ -45,6 +45,15 @@ def init_db():
                 date_envoi TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         """)
+        # --- NOUVELLE TABLE POUR LE PORTFOLIO ---
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS portfolio (
+                id SERIAL PRIMARY KEY,
+                artisan_id INT REFERENCES artisans(id),
+                image_b64 TEXT,
+                description TEXT
+            );
+        """)
         conn.commit()
         conn.close()
     except Exception as e:
@@ -124,3 +133,19 @@ def verifier_connexion_artisan(nom_artisan, password):
     res = cursor.fetchone()
     conn.close()
     return res
+
+# --- NOUVELLES FONCTIONS PORTFOLIO ---
+def ajouter_image_portfolio(artisan_id, image_b64, description=""):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO portfolio (artisan_id, image_b64, description) VALUES (%s, %s, %s)", (artisan_id, image_b64, description))
+    conn.commit()
+    conn.close()
+
+def obtenir_portfolio(artisan_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT image_b64, description FROM portfolio WHERE artisan_id = %s", (artisan_id,))
+    lignes = cursor.fetchall()
+    conn.close()
+    return [{"image_b64": r[0], "description": r[1]} for r in lignes]

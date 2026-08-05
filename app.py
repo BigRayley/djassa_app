@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import base64
 import database
 
 database.init_db()
@@ -36,7 +37,6 @@ if choix == "Accueil / Recherche":
     else:
         st.success(f"{len(artisans)} artisan(s) trouvé(s)")
         
-        # --- ÉTAPE 3 : CARTE INTERACTIVE ---
         st.subheader("🗺️ Carte des artisans")
         df_map = pd.DataFrame([{"lat": a["lat"], "lon": a["lon"]} for a in artisans if a.get("lat") and a.get("lon")])
         if not df_map.empty:
@@ -61,7 +61,17 @@ if choix == "Accueil / Recherche":
                 
                 st.markdown("---")
                 
-                # --- MESSAGERIE INTERNE (CHAT) ---
+                # --- AFFICHAGE DU PORTFOLIO POUR LE CLIENT ---
+                portfolio_images = database.obtenir_portfolio(art['id'])
+                if portfolio_images:
+                    st.subheader("📸 Portfolio & Réalisations")
+                    cols = st.columns(3)
+                    for i, img_data in enumerate(portfolio_images):
+                        with cols[i % 3]:
+                            # On reconstruit l'image depuis le texte Base64
+                            st.image(f"data:image/png;base64,{img_data['image_b64']}", caption=img_data['description'], use_container_width=True)
+                    st.markdown("---")
+
                 st.subheader("💬 Discuter en direct avec l'artisan")
                 messages = database.obtenir_messages(art['id'])
                 
@@ -87,7 +97,6 @@ if choix == "Accueil / Recherche":
 
                 st.markdown("---")
                 
-                # --- AVIS CLIENTS ---
                 st.subheader(f"⭐ Avis clients ({moyenne}/5 sur {nb_avis} avis)")
                 avis_list = database.obtenir_avis(art['id'])
                 if avis_list:
@@ -108,7 +117,6 @@ if choix == "Accueil / Recherche":
 elif choix == "Espace Prestataire (Inscription / Connexion)":
     st.header("🛠️ Espace Prestataire")
     
-    # --- TABLEAU DE BORD SI L'ARTISAN EST CONNECTÉ ---
     if 'artisan_id' in st.session_state:
         st.success(f"🟢 Connecté en tant que : {st.session_state['artisan_nom']}")
         
@@ -118,6 +126,25 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
             st.rerun()
             
         st.markdown("---")
+        
+        # --- AJOUT D'IMAGE AU PORTFOLIO (TABLEAU DE BORD) ---
+        st.subheader("📸 Ajouter une réalisation au Portfolio")
+        uploaded_file = st.file_uploader("Choisissez une image de votre travail", type=["png", "jpg", "jpeg"])
+        desc_image = st.text_input("Petite description de l'image (ex: Meuble sur mesure)")
+        
+        if st.button("Ajouter l'image"):
+            if uploaded_file is not None:
+                # Conversion de l'image en texte Base64
+                bytes_data = uploaded_file.getvalue()
+                image_b64 = base64.b64encode(bytes_data).decode()
+                database.ajouter_image_portfolio(st.session_state['artisan_id'], image_b64, desc_image)
+                st.success("Super ! L'image a été ajoutée à votre profil.")
+                st.rerun()
+            else:
+                st.warning("Veuillez sélectionner une image avant de valider.")
+        
+        st.markdown("---")
+        
         st.subheader("📬 Vos Messages Reçus")
         messages_recus = database.obtenir_messages(st.session_state['artisan_id'])
         if messages_recus:
