@@ -5,10 +5,61 @@ import database
 
 database.init_db()
 
+# Configuration de la page
 st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="centered")
 
-st.title("🇨🇮 DJASSA")
-st.subheader("Connectez-vous aux artisans et prestataires en Côte d'Ivoire")
+# --- INJECTION DE CSS POUR LE DESIGN (UI) ---
+st.markdown("""
+    <style>
+    /* Cacher le menu par défaut de Streamlit et le footer */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+
+    /* Design des boutons principaux */
+    .stButton>button {
+        background-color: #FF8C00; /* Orange dynamique */
+        color: white !important;
+        border-radius: 8px;
+        border: none;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background-color: #E67E22;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+        transform: scale(1.02);
+    }
+
+    /* Design des onglets et expanders (cartes artisans) */
+    .streamlit-expanderHeader {
+        background-color: #F8F9FA;
+        border-radius: 8px;
+        border: 1px solid #E0E0E0;
+        font-weight: bold;
+        font-size: 16px;
+    }
+    
+    /* Titre principal personnalisé */
+    .titre-djassa {
+        text-align: center;
+        color: #2C3E50;
+        font-size: 40px;
+        font-weight: 900;
+        margin-bottom: 5px;
+    }
+    .sous-titre {
+        text-align: center;
+        color: #7F8C8D;
+        font-size: 18px;
+        margin-bottom: 30px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# Affichage du titre avec notre nouveau style
+st.markdown('<div class="titre-djassa">🇨🇮 DJASSA</div>', unsafe_allow_html=True)
+st.markdown('<div class="sous-titre">Connectez-vous aux artisans et prestataires en Côte d\'Ivoire</div>', unsafe_allow_html=True)
 
 menu = ["Accueil / Recherche", "Espace Prestataire (Inscription / Connexion)", "Espace Administrateur"]
 choix = st.sidebar.selectbox("Navigation", menu)
@@ -45,7 +96,7 @@ if choix == "Accueil / Recherche":
 
         for art in artisans:
             moyenne, nb_avis = database.obtenir_note_moyenne(art['id'])
-            etoiles_affichage = f"⭐ {moyenne}/5 ({nb_avis} avis)" if nb_avis > 0 else "⭐ Nouveau (Pas encore d'avis)"
+            etoiles_affichage = f"⭐ {moyenne}/5 ({nb_avis} avis)" if nb_avis > 0 else "⭐ Nouveau"
 
             with st.expander(f"{art['nom']} - {art['metier']} ({art['commune']}) | {etoiles_affichage}"):
                 st.write(f"**Description :** {art['description']}")
@@ -116,7 +167,7 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
     st.header("🛠️ Espace Prestataire")
     
     if 'artisan_id' in st.session_state:
-        st.success(f"🟢 Connecté en tant que : {st.session_state['artisan_nom']}")
+        st.success(f"🟢 Connecté en tant que : **{st.session_state['artisan_nom']}**")
         
         if st.button("🚪 Se déconnecter"):
             del st.session_state['artisan_id']
