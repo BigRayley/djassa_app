@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import base64
+import qrcode
+from io import BytesIO
 import database
 
 # Initialisation sécurisée de la base de données
@@ -11,7 +13,17 @@ except Exception as e:
 
 st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="centered")
 
-# --- DESIGN IDENTIQUE À TRANSFERT CI (BANDEAU ORANGE & COMPOSANTS) ---
+# --- FONCTION POUR GÉNÉRER LE QR CODE CENTRAL ---
+def generer_qr_code(data):
+    qr = qrcode.QRCode(version=1, box_size=10, border=2)
+    qr.add_data(data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode()
+
+# --- DESIGN INSPIRÉ DE TRANSFERT CI ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
@@ -22,10 +34,9 @@ st.markdown("""
         background-color: #F7F8FA;
     }
     
-    /* Grand bandeau supérieur orange arrondi */
     .hero-banner {
         background: linear-gradient(135deg, #FF7A00 0%, #FF9900 100%);
-        padding: 30px 20px 70px 20px;
+        padding: 30px 20px 75px 20px;
         border-radius: 0 0 35px 35px;
         color: white;
         text-align: center;
@@ -42,20 +53,6 @@ st.markdown("""
         opacity: 0.95;
     }
 
-    /* Carte Scanner centrale en relief */
-    .scanner-card {
-        background: white;
-        padding: 25px;
-        border-radius: 24px;
-        box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08);
-        text-align: center;
-        margin: -50px auto 25px auto;
-        width: 85%;
-        max-width: 400px;
-        border: 1px solid #F0F0F0;
-    }
-
-    /* Boutons de navigation et actions */
     .stButton>button {
         background-color: #FF7A00;
         color: white !important;
@@ -82,15 +79,19 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 2. Carte centrale style "Scanner / Action rapide"
-st.markdown("""
-    <div class="scanner-card">
-        <h3 style="margin:0 0 10px 0; color:#2C3E50; font-size:18px;">📱 Accès Rapide & Flash</h3>
-        <p style="color:#7F8C8D; font-size:13px; margin:0;">Scannez ou choisissez un service ci-dessous</p>
+# 2. Carte QR code centrale dynamique
+url_app = "https://bigrayley-djassa-app-app-gqeluf.streamlit.app/"
+qr_b64 = generer_qr_code(url_app)
+
+st.markdown(f"""
+    <div style="background: white; padding: 20px; border-radius: 24px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08); text-align: center; margin: -55px auto 25px auto; width: 85%; max-width: 320px; border: 1px solid #F0F0F0;">
+        <h3 style="margin:0 0 8px 0; color:#2C3E50; font-size:16px;">📱 Scanner pour partager</h3>
+        <img src="data:image/png;base64,{qr_b64}" width="150" style="border-radius: 12px; margin-bottom: 8px;" />
+        <p style="color:#7F8C8D; font-size:11px; margin:0;">Accès direct à l'application DJASSA</p>
     </div>
 """, unsafe_allow_html=True)
 
-# 3. Menu de sélection des fonctions propres à DJASSA (avec logos/icônes adaptés)
+# 3. Menu de sélection des fonctions
 menu_choix = st.selectbox(
     "🧭 Sélectionnez une fonctionnalité :", 
     [
@@ -221,7 +222,7 @@ elif menu_choix == "🏥 Pharmacies de Garde":
         st.info("Aucune pharmacie de garde enregistrée pour cette commune actuellement.")
 
 elif menu_choix == "🌐 Pass Internet & Offres Mobiles":
-    st.header("🌐 Souscription de Forfaits Mobiles")
+    st.header("🌐 Souscription de Forfaits Mobiles & Wave")
     st.write("Le même procédé instantané : choisissez votre réseau, sélectionnez votre pass, entrez votre numéro et procédez au paiement.")
     
     operateur = st.selectbox("1. Choisissez l'opérateur :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
