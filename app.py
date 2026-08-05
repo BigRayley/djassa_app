@@ -14,17 +14,31 @@ choix = st.sidebar.selectbox("Navigation", menu)
 if choix == "Accueil / Recherche":
     st.header("🔍 Rechercher un service ou un artisan")
     
-    col1, col2 = st.columns(2)
+    # Séparation en 3 barres de recherche distinctes
+    col1, col2, col3 = st.columns(3)
+    
     with col1:
-        recherche = st.text_input("Nom, métier ou description...")
+        recherche_nom = st.text_input("Nom de l'artisan / entreprise")
     with col2:
-        commune = st.selectbox("Commune", ["Toutes les communes", "Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera"])
-        
-    artisans = database.rechercher_artisans_intelligent(query=recherche, commune_filtre=commune)
+        # Liste des communes de Côte d'Ivoire / Abidjan
+        communes_dispo = ["Toutes les communes", "Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"]
+        commune_filtre = st.selectbox("Commune", communes_dispo)
+    with col3:
+        # Métiers / Services
+        metiers_dispo = ["Tous les services", "Plombier", "Menuisier", "Électricien", "Maçon", "Peintre", "Climatisation", "Mécanicien", "Couturier"]
+        metier_filtre = st.selectbox("Service / Métier", metiers_dispo)
+    
+    # Recherche intelligente combinant les critères
+    query_finale = recherche_nom
+    if metier_filtre != "Tous les services":
+        query_finale = f"{recherche_nom} {metier_filtre}".strip()
+
+    artisans = database.rechercher_artisans_intelligent(query=query_finale, commune_filtre=commune_filtre)
     
     if not artisans:
-        st.info("Aucun artisan trouvé pour le moment.")
+        st.info("Aucun artisan trouvé avec ces critères.")
     else:
+        st.success(f"{len(artisans)} artisan(s) trouvé(s)")
         for art in artisans:
             with st.expander(f"{art['nom']} - {art['metier']} ({art['commune']})"):
                 st.write(f"**Description :** {art['description']}")
@@ -66,7 +80,7 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
         with st.form("form_inscription"):
             nom = st.text_input("Nom de l'entreprise ou de l'artisan")
             metier = st.text_input("Métier / Service (ex: Plombier, Menuisier...)")
-            commune = st.selectbox("Commune", ["Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera"])
+            commune = st.selectbox("Commune", ["Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"])
             description = st.text_area("Description de vos services")
             badge = st.text_input("Badge (ex: Vérifié, Professionnel...)")
             appel_url = st.text_input("Lien d'appel (ex: tel:+225...)")
