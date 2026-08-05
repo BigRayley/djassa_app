@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 import database
 
 database.init_db()
@@ -34,6 +35,14 @@ if choix == "Accueil / Recherche":
         st.info("Aucun artisan trouvé avec ces critères.")
     else:
         st.success(f"{len(artisans)} artisan(s) trouvé(s)")
+        
+        # --- ÉTAPE 3 : CARTE INTERACTIVE ---
+        st.subheader("🗺️ Carte des artisans")
+        df_map = pd.DataFrame([{"lat": a["lat"], "lon": a["lon"]} for a in artisans if a.get("lat") and a.get("lon")])
+        if not df_map.empty:
+            st.map(df_map, zoom=11)
+        st.markdown("---")
+
         for art in artisans:
             moyenne, nb_avis = database.obtenir_note_moyenne(art['id'])
             etoiles_affichage = f"⭐ {moyenne}/5 ({nb_avis} avis)" if nb_avis > 0 else "⭐ Nouveau (Pas encore d'avis)"
@@ -52,6 +61,7 @@ if choix == "Accueil / Recherche":
                 
                 st.markdown("---")
                 
+                # --- MESSAGERIE INTERNE (CHAT) ---
                 st.subheader("💬 Discuter en direct avec l'artisan")
                 messages = database.obtenir_messages(art['id'])
                 
@@ -77,6 +87,7 @@ if choix == "Accueil / Recherche":
 
                 st.markdown("---")
                 
+                # --- AVIS CLIENTS ---
                 st.subheader(f"⭐ Avis clients ({moyenne}/5 sur {nb_avis} avis)")
                 avis_list = database.obtenir_avis(art['id'])
                 if avis_list:
@@ -97,9 +108,9 @@ if choix == "Accueil / Recherche":
 elif choix == "Espace Prestataire (Inscription / Connexion)":
     st.header("🛠️ Espace Prestataire")
     
-    # --- ÉTAPE 4 : TABLEAU DE BORD SI L'ARTISAN EST CONNECTÉ ---
+    # --- TABLEAU DE BORD SI L'ARTISAN EST CONNECTÉ ---
     if 'artisan_id' in st.session_state:
-        st.success(f"🟢 Connecté en tant que : **{st.session_state['artisan_nom']}**")
+        st.success(f"🟢 Connecté en tant que : {st.session_state['artisan_nom']}")
         
         if st.button("🚪 Se déconnecter"):
             del st.session_state['artisan_id']
@@ -110,7 +121,6 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
         st.subheader("📬 Vos Messages Reçus")
         messages_recus = database.obtenir_messages(st.session_state['artisan_id'])
         if messages_recus:
-            # On affiche les messages du plus récent au plus ancien
             for msg in reversed(messages_recus):
                 date_str = msg['date_envoi'].strftime('%d/%m/%Y à %H:%M')
                 st.info(f"**De {msg['expediteur']}** ({date_str}) :\n\n{msg['contenu']}")
@@ -126,7 +136,6 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
         else:
             st.write("Aucun avis reçu pour le moment.")
             
-    # --- SINON, AFFICHER LES FORMULAIRES DE CONNEXION / INSCRIPTION ---
     else:
         action = st.radio("Que souhaitez-vous faire ?", ["S'inscrire", "Se connecter"])
         
@@ -170,6 +179,6 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
                 if artisan_verif:
                     st.session_state['artisan_id'] = artisan_verif[0]
                     st.session_state['artisan_nom'] = artisan_verif[1]
-                    st.rerun() # Recharge la page pour afficher le tableau de bord
+                    st.rerun()
                 else:
                     st.error("Nom ou mot de passe incorrect.")
