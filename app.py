@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import base64
-import qrcode
-from io import BytesIO
 import database
 
 # Initialisation sécurisée de la base de données
@@ -12,16 +10,6 @@ except Exception as e:
     st.error(f"Erreur de démarrage de la base de données : {e}")
 
 st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="centered")
-
-# --- FONCTION POUR GÉNÉRER LE QR CODE CENTRAL ---
-def generer_qr_code(data):
-    qr = qrcode.QRCode(version=1, box_size=10, border=2)
-    qr.add_data(data)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    buffered = BytesIO()
-    img.save(buffered, format="PNG")
-    return base64.b64encode(buffered.getvalue()).decode()
 
 # --- DESIGN INSPIRÉ DE TRANSFERT CI ---
 st.markdown("""
@@ -79,15 +67,11 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 2. Carte QR code centrale dynamique
-url_app = "https://bigrayley-djassa-app-app-gqeluf.streamlit.app/"
-qr_b64 = generer_qr_code(url_app)
-
-st.markdown(f"""
-    <div style="background: white; padding: 20px; border-radius: 24px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08); text-align: center; margin: -55px auto 25px auto; width: 85%; max-width: 320px; border: 1px solid #F0F0F0;">
-        <h3 style="margin:0 0 8px 0; color:#2C3E50; font-size:16px;">📱 Scanner pour partager</h3>
-        <img src="data:image/png;base64,{qr_b64}" width="150" style="border-radius: 12px; margin-bottom: 8px;" />
-        <p style="color:#7F8C8D; font-size:11px; margin:0;">Accès direct à l'application DJASSA</p>
+# 2. Carte centrale style Transfert CI
+st.markdown("""
+    <div style="background: white; padding: 25px; border-radius: 24px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08); text-align: center; margin: -55px auto 25px auto; width: 85%; max-width: 350px; border: 1px solid #F0F0F0;">
+        <h3 style="margin:0 0 5px 0; color:#2C3E50; font-size:18px;">📱 Accès Rapide & Services</h3>
+        <p style="color:#7F8C8D; font-size:12px; margin:0;">Sélectionnez votre module ci-dessous</p>
     </div>
 """, unsafe_allow_html=True)
 
