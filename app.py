@@ -46,7 +46,7 @@ st.markdown('<div class="sous-titre">Connectez-vous aux artisans et prestataires
 menu = [
     "🔍 Accueil / Recherche", 
     "🏥 Pharmacies de Garde", 
-    "🌐 Pass Internet", 
+    "🌐 Pass Internet & Offres Perso", 
     "🛠️ Espace Prestataire", 
     "👑 Espace Administrateur"
 ]
@@ -174,22 +174,29 @@ elif choix == "🏥 Pharmacies de Garde":
     else:
         st.info("Aucune pharmacie de garde enregistrée pour cette commune actuellement.")
 
-elif choix == "🌐 Pass Internet":
-    st.header("🌐 Catalogue Complet des Pass Internet (Côte d'Ivoire)")
-    st.write("Retrouvez toutes les offres data officielles et codes USSD des trois opérateurs.")
+elif choix == "🌐 Pass Internet & Offres Perso":
+    st.header("🌐 Catalogue & Bons Plans / Offres Perso (Côte d'Ivoire)")
+    st.write("Retrouvez les forfaits officiels mais surtout les codes et astuces pour dénicher les offres personnalisées les plus rentables !")
     
     operateur = st.selectbox("Sélectionnez l'opérateur :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
     
     if operateur == "Orange Côte d'Ivoire":
-        st.subheader("🟠 Catalogue Officiel - Orange CI")
+        st.subheader("🟠 Orange CI - Catalogue & Offres Perso")
         st.info("Code USSD universel : **#111#** ou application **Max It**")
         
-        tab_o1, tab_o2, tab_o3, tab_o4 = st.tabs(["⚡ Pass Heure & Nuit", "📅 Pass Jour", "📆 Pass Semaine", "🌙 Pass Mois & Mégas"])
+        tab_o0, tab_o1, tab_o2, tab_o3, tab_o4 = st.tabs(["🔥 Offres Perso & Bons Plans", "⚡ Pass Heure & Nuit", "📅 Pass Jour", "📆 Pass Semaine", "🌙 Pass Mois"])
         
+        with tab_o0:
+            st.warning("💡 **Ce que les ivoiriens kiffent le plus (Astuces & Offres Perso) :**")
+            st.markdown("""
+            * **Le Menu Secret Yamo / Bonus Perso :** Tapez **`#111*1#`** ou vérifiez directement sur l'application **Max It** pour voir vos bonus personnalisés (souvent 2x ou 3x plus de gigas pour le même prix selon votre historique de recharge).
+            * **Offre de Nuit Spéciale :** Le pass à **250F pour 2 Go** (valable de 21h à 07h), idéal pour les gros téléchargements.
+            * **Bonus Orange Money :** Payer ses pass via Orange Money donne souvent droit à des bonus de 50% à 100% de data offerts le vendredi ou le weekend.
+            """)
         with tab_o1:
             st.markdown("""
             * **Pass 1 Heure (100F) :** 100 Mo
-            * **Pass Nuit (250F) :** 2 Go (Valable de 21h à 07h)
+            * **Pass Nuit (250F) :** 2 Go (21h - 07h)
             * **Pass Social Heure (50F) :** Illimité WhatsApp / Facebook (1h)
             """)
         with tab_o2:
@@ -211,20 +218,26 @@ elif choix == "🌐 Pass Internet":
             * **Pass Mois (5 000F) :** 7.2 Go
             * **Pass Mois (10 000F) :** 15 Go
             * **Pass Mois (15 000F) :** 25 Go
-            * **Pass Mois Premium (25 000F) :** 50 Go
             """)
 
     elif operateur == "MTN Côte d'Ivoire":
-        st.subheader("🟡 Catalogue Officiel - MTN CI")
+        st.subheader("🟡 MTN CI - Catalogue & Offres Perso")
         st.info("Code USSD universel : ***105#** ou application **MTN MoMo / MyMTN**")
         
-        tab_m1, tab_m2, tab_m3, tab_m4 = st.tabs(["⚡ Pass Heure & Nuit", "📅 Pass Jour", "📆 Pass Semaine", "🌙 Pass Mois & Mégas"])
+        tab_m0, tab_m1, tab_m2, tab_m3, tab_m4 = st.tabs(["🔥 Offres Perso & Bons Plans", "⚡ Pass Heure & Nuit", "📅 Pass Jour", "📆 Pass Semaine", "🌙 Pass Mois"])
         
+        with tab_m0:
+            st.warning("💡 **Ce que les ivoiriens kiffent le plus (Astuces & Offres Perso) :**")
+            st.markdown("""
+            * **Le Menu Secret MTN Awoulaba / Perso :** Tapez **`*105*4#`** ou **`*105*1#`** pour découvrir les forfaits promotionnels cachés et les bonus de recharge personnalisés.
+            * **Pass Nuit Max :** Le pass **300F pour 3 Go** (de 00h à 06h), très apprécié pour les veillées de téléchargement.
+            * **Bonus MoMo :** Acheter ses pass internet directement depuis son compte MoMo offre régulièrement des volumes doublés (Happy Hour MoMo).
+            """)
         with tab_m1:
             st.markdown("""
             * **Pass 1 Heure (100F) :** 120 Mo
-            * **Pass Nuit (150F) :** 500 Mo (Valable de 23h à 07h)
-            * **Pass Nuit Max (300F) :** 3 Go (Valable de 00h à 06h)
+            * **Pass Nuit (150F) :** 500 Mo (23h - 07h)
+            * **Pass Nuit Max (300F) :** 3 Go (00h - 06h)
             """)
         with tab_m2:
             st.markdown("""
@@ -243,21 +256,27 @@ elif choix == "🌐 Pass Internet":
             * **Pass Mois (2 500F) :** 5 Go
             * **Pass Mois (5 000F) :** 10 Go
             * **Pass Mois (10 000F) :** 25 Go
-            * **Pass Mois (15 000F) :** 40 Go
             * **Pass Mois Max (25 000F) :** 75 Go
             """)
 
     elif operateur == "Moov Africa CI":
-        st.subheader("🔵 Catalogue Officiel - Moov Africa CI")
+        st.subheader("🔵 Moov Africa CI - Catalogue & Offres Perso")
         st.info("Code USSD universel : ***100#** ou application **Moov Merci**")
         
-        tab_mv1, tab_mv2, tab_mv3, tab_mv4 = st.tabs(["⚡ Pass Heure & Nuit", "📅 Pass Jour", "📆 Pass Semaine", "🌙 Pass Mois & Mégas"])
+        tab_mv0, tab_mv1, tab_mv2, tab_mv3, tab_mv4 = st.tabs(["🔥 Offres Perso & Bons Plans", "⚡ Pass Heure & Nuit", "📅 Pass Jour", "📆 Pass Semaine", "🌙 Pass Mois"])
         
+        with tab_mv0:
+            st.warning("💡 **Ce que les ivoiriens kiffent le plus (Astuces & Offres Perso) :**")
+            st.markdown("""
+            * **Le Menu Secret Moov Flooz / Bonus :** Tapez **`*100*5#`** ou vérifiez sur l'application **Moov Merci** pour voir les méga-promos et pass personnalisés du moment.
+            * **Pass Weekend imbattable :** Le **Pass Weekend à 500F pour 2.5 Go** (valable du samedi au dimanche), le plan parfait pour les réseaux sociaux.
+            * **Super Bonus de Recharge :** Moov est connu pour ses multiplicateurs de crédit et de data lors des recharges via Flooz.
+            """)
         with tab_mv1:
             st.markdown("""
             * **Pass Heure (100F) :** 150 Mo
-            * **Pass Nuit (200F) :** 2 Go (Valable de 23h à 07h)
-            * **Pass Weekend (500F) :** 2.5 Go (Samedi et Dimanche)
+            * **Pass Nuit (200F) :** 2 Go (23h - 07h)
+            * **Pass Weekend (500F) :** 2.5 Go (Samedi - Dimanche)
             """)
         with tab_mv2:
             st.markdown("""
@@ -276,7 +295,6 @@ elif choix == "🌐 Pass Internet":
             * **Pass Mois (3 000F) :** 4.5 Go
             * **Pass Mois (5 000F) :** 7 Go
             * **Pass Mois (10 000F) :** 20 Go
-            * **Pass Mensuel Mega (14 900F) :** 40 Go
             * **Pass Mois XXL (25 000F) :** 70 Go
             """)
 
