@@ -35,7 +35,11 @@ if choix == "Accueil / Recherche":
     else:
         st.success(f"{len(artisans)} artisan(s) trouvé(s)")
         for art in artisans:
-            with st.expander(f"{art['nom']} - {art['metier']} ({art['commune']})"):
+            # Calcul dynamique de la note moyenne
+            moyenne, nb_avis = database.obtenir_note_moyenne(art['id'])
+            etoiles_affichage = f"⭐ {moyenne}/5 ({nb_avis} avis)" if nb_avis > 0 else "⭐ Nouveau (Pas encore d'avis)"
+
+            with st.expander(f"{art['nom']} - {art['metier']} ({art['commune']}) | {etoiles_affichage}"):
                 st.write(f"**Description :** {art['description']}")
                 st.write(f"**Badge :** {art['badge']}")
                 
@@ -49,11 +53,10 @@ if choix == "Accueil / Recherche":
                 
                 st.markdown("---")
                 
-                # --- ÉTAPE 1 : MESSAGERIE INTERNE (CHAT) ---
+                # --- MESSAGERIE INTERNE (CHAT) ---
                 st.subheader("💬 Discuter en direct avec l'artisan")
                 messages = database.obtenir_messages(art['id'])
                 
-                # Zone d'affichage des messages
                 chat_container = st.container(height=200)
                 with chat_container:
                     if messages:
@@ -75,7 +78,9 @@ if choix == "Accueil / Recherche":
                             st.warning("Veuillez remplir votre nom et votre message.")
 
                 st.markdown("---")
-                st.subheader("⭐ Avis clients")
+                
+                # --- ÉTAPE 2 : AVIS ET NOTES DYNAMIQUES ---
+                st.subheader(f"⭐ Avis clients ({moyenne}/5 sur {nb_avis} avis)")
                 avis_list = database.obtenir_avis(art['id'])
                 if avis_list:
                     for av in avis_list:

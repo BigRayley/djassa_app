@@ -13,7 +13,6 @@ def init_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        # Création des tables si elles n'existent pas
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS artisans (
                 id SERIAL PRIMARY KEY,
@@ -92,6 +91,16 @@ def obtenir_avis(artisan_id):
     lignes = cursor.fetchall()
     conn.close()
     return [{"note": r[0], "commentaire": r[1]} for r in lignes]
+
+def obtenir_note_moyenne(artisan_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT AVG(note), COUNT(id) FROM avis WHERE artisan_id = %s", (artisan_id,))
+    res = cursor.fetchone()
+    conn.close()
+    if res and res[0] is not None:
+        return round(res[0], 1), res[1]  # Retourne (moyenne, nombre_total_avis)
+    return 0.0, 0
 
 def envoyer_message(artisan_id, expediteur, contenu):
     conn = get_connection()
