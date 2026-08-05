@@ -42,7 +42,7 @@ st.markdown("""
 st.markdown('<div class="titre-djassa">🇨🇮 DJASSA</div>', unsafe_allow_html=True)
 st.markdown('<div class="sous-titre">Connectez-vous aux artisans et prestataires en Côte d\'Ivoire</div>', unsafe_allow_html=True)
 
-# --- NAVIGATION PRINCIPALE DIRECTE (PLUS DE RISQUE DE LA RATER) ---
+# --- NAVIGATION PRINCIPALE ---
 menu = [
     "🔍 Accueil / Recherche", 
     "🏥 Pharmacies de Garde", 
@@ -175,60 +175,109 @@ elif choix == "🏥 Pharmacies de Garde":
         st.info("Aucune pharmacie de garde enregistrée pour cette commune actuellement.")
 
 elif choix == "🌐 Pass Internet":
-    st.header("🌐 Catalogue des Pass Internet & Codes USSD")
-    st.write("Consultez les meilleurs forfaits data du marché ivoirien et souscrivez en un clic.")
+    st.header("🌐 Catalogue Complet des Pass Internet (Côte d'Ivoire)")
+    st.write("Retrouvez toutes les offres data officielles et codes USSD des trois opérateurs.")
     
-    operateur = st.selectbox("Choisissez l'opérateur :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
+    operateur = st.selectbox("Sélectionnez l'opérateur :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
     
     if operateur == "Orange Côte d'Ivoire":
-        st.subheader("🟠 Offres Orange CI")
-        st.info("Code USSD direct : **#111#** ou via l'application Max It")
-        col_o1, col_o2 = st.columns(2)
-        with col_o1:
+        st.subheader("🟠 Catalogue Officiel - Orange CI")
+        st.info("Code USSD universel : **#111#** ou application **Max It**")
+        
+        tab_o1, tab_o2, tab_o3, tab_o4 = st.tabs(["⚡ Pass Heure & Nuit", "📅 Pass Jour", "📆 Pass Semaine", "🌙 Pass Mois & Mégas"])
+        
+        with tab_o1:
             st.markdown("""
-            * **Pass 2 Jours (200F) :** 220 Mo
-            * **Pass Semaine (1 000F) :** 1.5 Go
+            * **Pass 1 Heure (100F) :** 100 Mo
+            * **Pass Nuit (250F) :** 2 Go (Valable de 21h à 07h)
+            * **Pass Social Heure (50F) :** Illimité WhatsApp / Facebook (1h)
+            """)
+        with tab_o2:
+            st.markdown("""
+            * **Pass 24H (100F) :** 40 Mo
+            * **Pass 24H (200F) :** 220 Mo
+            * **Pass 24H (500F) :** 750 Mo
+            * **Pass 24H (1 000F) :** 2 Go
+            """)
+        with tab_o3:
+            st.markdown("""
+            * **Pass Semaine (500F) :** 300 Mo + Réseaux sociaux
+            * **Pass Semaine (1 000F) :** 1.5 Go + WaW Muzik
+            * **Pass Semaine (2 000F) :** 3.5 Go
+            """)
+        with tab_o4:
+            st.markdown("""
+            * **Pass Mois (3 000F) :** 4 Go
             * **Pass Mois (5 000F) :** 7.2 Go
-            """)
-        with col_o2:
-            st.markdown("""
-            * **Pass Nuit (250F) :** 2 Go (21h - 07h)
-            * **Pass Social Semaine (500F) :** 1 Go
             * **Pass Mois (10 000F) :** 15 Go
+            * **Pass Mois (15 000F) :** 25 Go
+            * **Pass Mois Premium (25 000F) :** 50 Go
             """)
-            
+
     elif operateur == "MTN Côte d'Ivoire":
-        st.subheader("🟡 Offres MTN CI")
-        st.info("Code USSD direct : ***105#**")
-        col_m1, col_m2 = st.columns(2)
-        with col_m1:
+        st.subheader("🟡 Catalogue Officiel - MTN CI")
+        st.info("Code USSD universel : ***105#** ou application **MTN MoMo / MyMTN**")
+        
+        tab_m1, tab_m2, tab_m3, tab_m4 = st.tabs(["⚡ Pass Heure & Nuit", "📅 Pass Jour", "📆 Pass Semaine", "🌙 Pass Mois & Mégas"])
+        
+        with tab_m1:
             st.markdown("""
-            * **Pass 1 Jour (150F) :** 150 Mo
-            * **Pass Semaine (1 000F) :** 1.5 Go
-            * **Pass Mois (2 500F) :** 5 Go
+            * **Pass 1 Heure (100F) :** 120 Mo
+            * **Pass Nuit (150F) :** 500 Mo (Valable de 23h à 07h)
+            * **Pass Nuit Max (300F) :** 3 Go (Valable de 00h à 06h)
             """)
-        with col_m2:
+        with tab_m2:
             st.markdown("""
-            * **Pass Nuit (150F) :** 500 Mo (23h - 07h)
+            * **Pass Jour (150F) :** 150 Mo
+            * **Pass Jour (300F) :** 400 Mo
+            * **Pass Jour (600F) :** 1 Go
+            """)
+        with tab_m3:
+            st.markdown("""
+            * **Pass Semaine (500F) :** 600 Mo
+            * **Pass Semaine (1 000F) :** 1.5 Go
+            * **Pass Semaine (2 000F) :** 4 Go
+            """)
+        with tab_m4:
+            st.markdown("""
+            * **Pass Mois (2 500F) :** 5 Go
             * **Pass Mois (5 000F) :** 10 Go
             * **Pass Mois (10 000F) :** 25 Go
+            * **Pass Mois (15 000F) :** 40 Go
+            * **Pass Mois Max (25 000F) :** 75 Go
             """)
-            
+
     elif operateur == "Moov Africa CI":
-        st.subheader("🔵 Offres Moov Africa CI")
-        st.info("Code USSD direct : ***100#**")
-        col_mv1, col_mv2 = st.columns(2)
-        with col_mv1:
+        st.subheader("🔵 Catalogue Officiel - Moov Africa CI")
+        st.info("Code USSD universel : ***100#** ou application **Moov Merci**")
+        
+        tab_mv1, tab_mv2, tab_mv3, tab_mv4 = st.tabs(["⚡ Pass Heure & Nuit", "📅 Pass Jour", "📆 Pass Semaine", "🌙 Pass Mois & Mégas"])
+        
+        with tab_mv1:
+            st.markdown("""
+            * **Pass Heure (100F) :** 150 Mo
+            * **Pass Nuit (200F) :** 2 Go (Valable de 23h à 07h)
+            * **Pass Weekend (500F) :** 2.5 Go (Samedi et Dimanche)
+            """)
+        with tab_mv2:
             st.markdown("""
             * **Pass 2 Jours (150F) :** 150 Mo
-            * **Pass Semaine (750F) :** 1 Go
-            * **Pass Mois (5 000F) :** 7 Go
+            * **Pass 2 Jours (300F) :** 450 Mo
+            * **Pass Jour (500F) :** 800 Mo
             """)
-        with col_mv2:
+        with tab_mv3:
             st.markdown("""
-            * **Pass Nuit (200F) :** 2 Go (23h - 07h)
+            * **Pass Semaine (300F) :** 350 Mo
+            * **Pass Semaine (750F) :** 1 Go
+            * **Pass Semaine (1 500F) :** 3 Go
+            """)
+        with tab_mv4:
+            st.markdown("""
+            * **Pass Mois (3 000F) :** 4.5 Go
+            * **Pass Mois (5 000F) :** 7 Go
             * **Pass Mois (10 000F) :** 20 Go
             * **Pass Mensuel Mega (14 900F) :** 40 Go
+            * **Pass Mois XXL (25 000F) :** 70 Go
             """)
 
 elif choix == "🛠️ Espace Prestataire":
