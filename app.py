@@ -61,14 +61,12 @@ if choix == "Accueil / Recherche":
                 
                 st.markdown("---")
                 
-                # --- AFFICHAGE DU PORTFOLIO POUR LE CLIENT ---
                 portfolio_images = database.obtenir_portfolio(art['id'])
                 if portfolio_images:
                     st.subheader("📸 Portfolio & Réalisations")
                     cols = st.columns(3)
                     for i, img_data in enumerate(portfolio_images):
                         with cols[i % 3]:
-                            # On reconstruit l'image depuis le texte Base64
                             st.image(f"data:image/png;base64,{img_data['image_b64']}", caption=img_data['description'], use_container_width=True)
                     st.markdown("---")
 
@@ -127,14 +125,12 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
             
         st.markdown("---")
         
-        # --- AJOUT D'IMAGE AU PORTFOLIO (TABLEAU DE BORD) ---
         st.subheader("📸 Ajouter une réalisation au Portfolio")
         uploaded_file = st.file_uploader("Choisissez une image de votre travail", type=["png", "jpg", "jpeg"])
         desc_image = st.text_input("Petite description de l'image (ex: Meuble sur mesure)")
         
         if st.button("Ajouter l'image"):
             if uploaded_file is not None:
-                # Conversion de l'image en texte Base64
                 bytes_data = uploaded_file.getvalue()
                 image_b64 = base64.b64encode(bytes_data).decode()
                 database.ajouter_image_portfolio(st.session_state['artisan_id'], image_b64, desc_image)
@@ -209,17 +205,15 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
                     st.rerun()
                 else:
                     st.error("Nom ou mot de passe incorrect.")
-                    elif choix == "Espace Administrateur":
+
+elif choix == "Espace Administrateur":
     st.header("👑 Panneau de Contrôle Administrateur")
     
-    # Mot de passe sécurisé pour l'admin
     admin_pwd = st.text_input("Mot de passe administrateur", type="password")
     
-    # Le mot de passe pour rentrer est : djassa_admin_2026
     if admin_pwd == "djassa_admin_2026":
         st.success("Accès autorisé. Bienvenue boss !")
         
-        # Affichage des statistiques
         st.subheader("📊 Statistiques de la plateforme")
         nb_artisans, nb_avis, nb_messages = database.obtenir_toutes_les_stats()
         
@@ -230,7 +224,6 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
         
         st.markdown("---")
         
-        # Gestion des prestataires
         st.subheader("🛠️ Gérer les prestataires")
         tous_les_artisans = database.obtenir_tous_les_artisans_admin()
         
@@ -244,7 +237,7 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
                         if st.button("❌ Supprimer", key=f"del_{art['id']}"):
                             database.supprimer_artisan(art['id'])
                             st.rerun()
-                    st.divider()
+                st.divider()
         else:
             st.info("Aucun prestataire inscrit pour le moment.")
             
