@@ -42,7 +42,14 @@ st.markdown("""
 st.markdown('<div class="titre-djassa">🇨🇮 DJASSA</div>', unsafe_allow_html=True)
 st.markdown('<div class="sous-titre">Connectez-vous aux artisans et prestataires en Côte d\'Ivoire</div>', unsafe_allow_html=True)
 
-menu = ["Accueil / Recherche", "Pharmacies de Garde", "Espace Prestataire (Inscription / Connexion)", "Espace Administrateur"]
+# --- MENU COMPLET AVEC TOUTES LES FONCTIONNALITÉS ---
+menu = [
+    "Accueil / Recherche", 
+    "Pharmacies de Garde", 
+    "Pass Internet (Orange, MTN, Moov)", 
+    "Espace Prestataire (Inscription / Connexion)", 
+    "Espace Administrateur"
+]
 choix = st.sidebar.selectbox("Navigation", menu)
 
 communes_liste = ["Toutes les communes", "Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"]
@@ -164,6 +171,63 @@ elif choix == "Pharmacies de Garde":
                 st.divider()
     else:
         st.info("Aucune pharmacie de garde enregistrée pour cette commune actuellement.")
+
+elif choix == "Pass Internet (Orange, MTN, Moov)":
+    st.header("🌐 Catalogue des Pass Internet & Codes USSD")
+    st.write("Consultez les meilleurs forfaits data du marché ivoirien et souscrivez en un clic.")
+    
+    operateur = st.selectbox("Choisissez l'opérateur :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
+    
+    if operateur == "Orange Côte d'Ivoire":
+        st.subheader("🟠 Offres Orange CI")
+        st.info("Code USSD direct : **#111#** ou via l'application Max It")
+        col_o1, col_o2 = st.columns(2)
+        with col_o1:
+            st.markdown("""
+            * **Pass 2 Jours (200F) :** 220 Mo
+            * **Pass Semaine (1 000F) :** 1.5 Go + WaW Muzik
+            * **Pass Mois (5 000F) :** 7.2 Go
+            """)
+        with col_o2:
+            st.markdown("""
+            * **Pass Nuit (250F) :** 2 Go (21h - 07h)
+            * **Pass Social Semaine (500F) :** 1 Go (Réseaux Sociaux)
+            * **Pass Mois (10 000F) :** 15 Go
+            """)
+            
+    elif operateur == "MTN Côte d'Ivoire":
+        st.subheader("🟡 Offres MTN CI")
+        st.info("Code USSD direct : ***105#**")
+        col_m1, col_m2 = st.columns(2)
+        with col_m1:
+            st.markdown("""
+            * **Pass 1 Jour (150F) :** 150 Mo
+            * **Pass Semaine (1 000F) :** 1.5 Go
+            * **Pass Mois (2 500F) :** 5 Go
+            """)
+        with col_m2:
+            st.markdown("""
+            * **Pass Nuit (150F) :** 500 Mo (23h - 07h)
+            * **Pass Mois (5 000F) :** 10 Go
+            * **Pass Mois (10 000F) :** 25 Go
+            """)
+            
+    elif operateur == "Moov Africa CI":
+        st.subheader("🔵 Offres Moov Africa CI")
+        st.info("Code USSD direct : ***100#**")
+        col_mv1, col_mv2 = st.columns(2)
+        with col_mv1:
+            st.markdown("""
+            * **Pass 2 Jours (150F) :** 150 Mo
+            * **Pass Semaine (750F) :** 1 Go
+            * **Pass Mois (5 000F) :** 7 Go
+            """)
+        with col_mv2:
+            st.markdown("""
+            * **Pass Nuit (200F) :** 2 Go (23h - 07h)
+            * **Pass Mois (10 000F) :** 20 Go
+            * **Pass Mensuel Mega (14 900F) :** 40 Go
+            """)
 
 elif choix == "Espace Prestataire (Inscription / Connexion)":
     st.header("🛠️ Espace Prestataire")
