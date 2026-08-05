@@ -11,97 +11,64 @@ except Exception as e:
 
 st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="centered")
 
-# --- DESIGN INSPIRÉ DE TRANSFERT CI ---
+# --- DESIGN SIMPLE ET ÉPURÉ (ANCIEN STYLE) ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    .stApp {
-        background-color: #F7F8FA;
-    }
-    
-    .hero-banner {
-        background: linear-gradient(135deg, #FF7A00 0%, #FF9900 100%);
-        padding: 30px 20px 75px 20px;
-        border-radius: 0 0 35px 35px;
-        color: white;
+    .titre-djassa {
         text-align: center;
-        box-shadow: 0px 8px 20px rgba(255, 122, 0, 0.25);
-    }
-    .hero-banner h1 {
-        margin: 0;
-        font-size: 34px;
+        color: #FF7A00;
+        font-size: 38px;
         font-weight: 900;
+        margin-bottom: 5px;
     }
-    .hero-banner p {
-        margin: 5px 0 0 0;
-        font-size: 15px;
-        opacity: 0.95;
+    .sous-titre {
+        text-align: center;
+        color: #A0A0A0;
+        font-size: 16px;
+        margin-bottom: 25px;
     }
-
     .stButton>button {
         background-color: #FF7A00;
         color: white !important;
-        border-radius: 14px;
+        border-radius: 8px;
         border: none;
         font-weight: bold;
-        padding: 12px 24px;
-        width: 100%;
-        box-shadow: 0px 4px 12px rgba(255, 122, 0, 0.2);
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        background-color: #E06B00;
-        transform: translateY(-2px);
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 1. Bandeau supérieur orange
-st.markdown("""
-    <div class="hero-banner">
-        <h1>🇨🇮 DJASSA</h1>
-        <p>Votre plateforme de services et proximité en Côte d'Ivoire</p>
-    </div>
-""", unsafe_allow_html=True)
+st.markdown('<div class="titre-djassa">🇨🇮 DJASSA</div>', unsafe_allow_html=True)
+st.markdown('<div class="sous-titre">Connectez-vous aux artisans, pharmacies et services en Côte d\'Ivoire</div>', unsafe_allow_html=True)
 
-# 2. Carte centrale style Transfert CI
-st.markdown("""
-    <div style="background: white; padding: 25px; border-radius: 24px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08); text-align: center; margin: -55px auto 25px auto; width: 85%; max-width: 350px; border: 1px solid #F0F0F0;">
-        <h3 style="margin:0 0 5px 0; color:#2C3E50; font-size:18px;">📱 Accès Rapide & Services</h3>
-        <p style="color:#7F8C8D; font-size:12px; margin:0;">Sélectionnez votre module ci-dessous</p>
-    </div>
-""", unsafe_allow_html=True)
+# --- NAVIGATION PRINCIPALE CLASSIQUE ---
+menu = [
+    "🔍 Accueil / Recherche", 
+    "🏥 Pharmacies de Garde", 
+    "🌐 Pass Internet & Wave", 
+    "🛠️ Espace Prestataire", 
+    "👑 Espace Administrateur"
+]
 
-# 3. Menu de sélection des fonctions
-menu_choix = st.selectbox(
-    "🧭 Sélectionnez une fonctionnalité :", 
-    [
-        "🔍 Annuaire & Artisans", 
-        "🏥 Pharmacies de Garde", 
-        "🌐 Pass Internet & Offres Mobiles", 
-        "🛠️ Espace Prestataire", 
-        "👑 Espace Administrateur"
-    ]
-)
-
+choix = st.radio("Navigation principale :", menu, horizontal=True)
 st.markdown("---")
 
 communes_liste = ["Toutes les communes", "Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"]
 
-if menu_choix == "🔍 Annuaire & Artisans":
-    st.header("🔍 Rechercher un artisan ou un service")
+if choix == "🔍 Accueil / Recherche":
+    st.header("🔍 Rechercher un service ou un artisan")
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        recherche_nom = st.text_input("Nom ou entreprise")
+        recherche_nom = st.text_input("Nom de l'artisan / entreprise")
     with col2:
         commune_filtre = st.selectbox("Commune", communes_liste)
     with col3:
         metiers_dispo = ["Tous les services", "Plombier", "Menuisier", "Électricien", "Maçon", "Peintre", "Climatisation", "Mécanicien", "Couturier"]
-        metier_filtre = st.selectbox("Métier", metiers_dispo)
+        metier_filtre = st.selectbox("Service / Métier", metiers_dispo)
     
     query_finale = recherche_nom
     if metier_filtre != "Tous les services":
@@ -112,9 +79,9 @@ if menu_choix == "🔍 Annuaire & Artisans":
     if not artisans:
         st.info("Aucun artisan trouvé avec ces critères.")
     else:
-        st.success(f"{len(artisans)} prestataire(s) trouvé(s)")
+        st.success(f"{len(artisans)} artisan(s) trouvé(s)")
         
-        st.subheader("🗺️ Carte des prestataires")
+        st.subheader("🗺️ Carte des artisans")
         df_map = pd.DataFrame([{"lat": a["lat"], "lon": a["lon"]} for a in artisans if a.get("lat") and a.get("lon")])
         if not df_map.empty:
             st.map(df_map, zoom=11)
@@ -124,7 +91,7 @@ if menu_choix == "🔍 Annuaire & Artisans":
             moyenne, nb_avis = database.obtenir_note_moyenne(art['id'])
             etoiles_affichage = f"⭐ {moyenne}/5 ({nb_avis} avis)" if nb_avis > 0 else "⭐ Nouveau"
 
-            with st.expander(f"🛠️ {art['nom']} - {art['metier']} ({art['commune']}) | {etoiles_affichage}"):
+            with st.expander(f"{art['nom']} - {art['metier']} ({art['commune']}) | {etoiles_affichage}"):
                 st.write(f"**Description :** {art['description']}")
                 st.write(f"**Badge :** {art['badge']}")
                 
@@ -147,7 +114,7 @@ if menu_choix == "🔍 Annuaire & Artisans":
                             st.image(f"data:image/png;base64,{img_data['image_b64']}", caption=img_data['description'], use_container_width=True)
                     st.markdown("---")
 
-                st.subheader("💬 Discuter en direct")
+                st.subheader("💬 Discuter en direct avec l'artisan")
                 messages = database.obtenir_messages(art['id'])
                 
                 chat_container = st.container(height=200)
@@ -156,18 +123,19 @@ if menu_choix == "🔍 Annuaire & Artisans":
                         for msg in messages:
                             st.write(f"**{msg['expediteur']}** : {msg['contenu']}")
                     else:
-                        st.caption("Aucun message pour l'instant.")
+                        st.caption("Aucun message pour l'instant. Envoyez le premier !")
                 
                 with st.form(f"form_chat_{art['id']}", clear_on_submit=True):
                     nom_expediteur = st.text_input("Votre nom / pseudo", key=f"exp_{art['id']}")
                     texte_message = st.text_input("Votre message", key=f"txt_{art['id']}")
-                    if st.form_submit_button("Envoyer le message"):
+                    send_msg = st.form_submit_button("Envoyer le message")
+                    if send_msg:
                         if nom_expediteur and texte_message:
                             database.envoyer_message(art['id'], nom_expediteur, texte_message)
                             st.success("Message envoyé !")
                             st.rerun()
                         else:
-                            st.warning("Remplissez votre nom et votre message.")
+                            st.warning("Veuillez remplir votre nom et votre message.")
 
                 st.markdown("---")
                 st.subheader(f"⭐ Avis clients ({moyenne}/5 sur {nb_avis} avis)")
@@ -181,12 +149,13 @@ if menu_choix == "🔍 Annuaire & Artisans":
                 with st.form(f"form_avis_{art['id']}"):
                     note = st.slider("Note", 1, 5, 5, key=f"slider_{art['id']}")
                     commentaire = st.text_area("Votre commentaire", key=f"comm_{art['id']}")
-                    if st.form_submit_button("Laisser un avis"):
+                    submit_avis = st.form_submit_button("Laisser un avis")
+                    if submit_avis:
                         database.ajouter_avis(art['id'], note, commentaire)
-                        st.success("Avis ajouté !")
+                        st.success("Avis ajouté avec succès !")
                         st.rerun()
 
-elif menu_choix == "🏥 Pharmacies de Garde":
+elif choix == "🏥 Pharmacies de Garde":
     st.header("🏥 Pharmacies de Garde")
     st.write("Trouvez rapidement les pharmacies ouvertes pour les urgences cette semaine.")
     
@@ -205,9 +174,9 @@ elif menu_choix == "🏥 Pharmacies de Garde":
     else:
         st.info("Aucune pharmacie de garde enregistrée pour cette commune actuellement.")
 
-elif menu_choix == "🌐 Pass Internet & Offres Mobiles":
-    st.header("🌐 Souscription de Forfaits Mobiles & Wave")
-    st.write("Le même procédé instantané : choisissez votre réseau, sélectionnez votre pass, entrez votre numéro et procédez au paiement.")
+elif choix == "🌐 Pass Internet & Wave":
+    st.header("🌐 Commande de Pass Internet & Paiement Wave")
+    st.write("Choisissez votre opérateur, sélectionnez votre pass, entrez votre numéro et procédez au paiement instantané via Wave.")
     
     operateur = st.selectbox("1. Choisissez l'opérateur :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
     
@@ -239,27 +208,29 @@ elif menu_choix == "🌐 Pass Internet & Offres Mobiles":
     }
     
     st.markdown("---")
-    st.subheader("2. Sélectionnez votre offre")
+    st.subheader("2. Sélectionnez votre Pass")
     pass_choisi = st.selectbox("Catalogue des offres :", list(offres_par_operateur[operateur].keys()))
     montant = offres_par_operateur[operateur][pass_choisi]
     
-    st.markdown(f"💳 **Montant à régler :** `{montant} FCFA`")
+    st.markdown(f"💰 **Montant à payer :** `{montant} FCFA`")
     
     st.markdown("---")
-    st.subheader("3. Numéro de téléphone & Paiement Wave")
+    st.subheader("3. Informations de réception & Paiement")
     
-    with st.form("form_souscription"):
+    with st.form("form_achat_pass"):
         numero_client = st.text_input("Votre numéro de téléphone (ex: 07 / 05 / 01...)")
         
-        if st.form_submit_button("🚀 Valider et Payer avec Wave"):
+        submit_paiement = st.form_submit_button("💳 Payer avec Wave & Activer le Pass")
+        
+        if submit_paiement:
             if numero_client and len(numero_client) >= 10:
-                st.success(f"✅ Commande enregistrée pour le **{numero_client}** !")
-                st.info(f"Montant : **{montant} FCFA** - Redirection vers la passerelle **Wave**...")
-                st.link_button("👉 Ouvrir l'application Wave pour régler", "https://pay.wave.com/")
+                st.success(f"🎉 Commande enregistrée pour le numéro **{numero_client}** !")
+                st.info(f"Redirection vers **Wave** pour le règlement de **{montant} FCFA**...")
+                st.link_button("👉 Ouvrir Wave pour payer", "https://pay.wave.com/")
             else:
-                st.error("Veuillez entrer un numéro de téléphone valide à 10 chiffres.")
+                st.error("Veuillez entrer un numéro de téléphone valide (10 chiffres).")
 
-elif menu_choix == "🛠️ Espace Prestataire":
+elif choix == "🛠️ Espace Prestataire":
     st.header("🛠️ Espace Prestataire")
     
     if 'artisan_id' in st.session_state:
@@ -280,10 +251,10 @@ elif menu_choix == "🛠️ Espace Prestataire":
                 bytes_data = uploaded_file.getvalue()
                 image_b64 = base64.b64encode(bytes_data).decode()
                 database.ajouter_image_portfolio(st.session_state['artisan_id'], image_b64, desc_image)
-                st.success("Image ajoutée à votre profil !")
+                st.success("Image ajoutée à votre profil.")
                 st.rerun()
             else:
-                st.warning("Sélectionnez une image.")
+                st.warning("Veuillez sélectionner une image.")
         
         st.markdown("---")
         st.subheader("📬 Vos Messages Reçus")
@@ -293,7 +264,7 @@ elif menu_choix == "🛠️ Espace Prestataire":
                 date_str = msg['date_envoi'].strftime('%d/%m/%Y à %H:%M')
                 st.info(f"**De {msg['expediteur']}** ({date_str}) :\n\n{msg['contenu']}")
         else:
-            st.write("Aucun message reçu.")
+            st.write("Aucun message reçu pour le moment.")
             
         st.markdown("---")
         st.subheader("⭐ Vos Avis Clients")
@@ -308,18 +279,20 @@ elif menu_choix == "🛠️ Espace Prestataire":
         action = st.radio("Que souhaitez-vous faire ?", ["S'inscrire", "Se connecter"])
         
         if action == "S'inscrire":
-            st.subheader("Enregistrer votre établissement")
+            st.subheader("Enregistrer un nouvel établissement / service")
             with st.form("form_inscription"):
                 nom = st.text_input("Nom de l'entreprise ou de l'artisan")
                 metier = st.text_input("Métier / Service (ex: Plombier...)")
                 commune = st.selectbox("Commune", communes_liste[1:])
-                description = st.text_area("Description")
+                description = st.text_area("Description de vos services")
                 badge = st.text_input("Badge (ex: Vérifié)")
                 appel_url = st.text_input("Lien d'appel (tel:+225...)")
                 whatsapp_url = st.text_input("Lien WhatsApp (https://wa.me/...)")
-                password = st.text_input("Mot de passe", type="password")
+                password = st.text_input("Mot de passe pour gérer votre espace", type="password")
                 
-                if st.form_submit_button("Valider l'enregistrement"):
+                submit_artisan = st.form_submit_button("Valider l'enregistrement")
+                
+                if submit_artisan:
                     if nom and metier and password:
                         database.ajouter_artisan(nom, metier, commune, description, badge, appel_url, whatsapp_url, password)
                         st.success("Établissement enregistré avec succès !")
@@ -340,7 +313,7 @@ elif menu_choix == "🛠️ Espace Prestataire":
                 else:
                     st.error("Nom ou mot de passe incorrect.")
 
-elif menu_choix == "👑 Espace Administrateur":
+elif choix == "👑 Espace Administrateur":
     st.header("👑 Panneau de Contrôle Administrateur")
     
     admin_pwd = st.text_input("Mot de passe administrateur", type="password")
