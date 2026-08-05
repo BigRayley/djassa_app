@@ -57,7 +57,6 @@ def init_db():
                 description TEXT
             );
         """)
-        # --- NOUVELLE TABLE : PHARMACIES ---
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS pharmacies (
                 id SERIAL PRIMARY KEY,
@@ -195,7 +194,6 @@ def supprimer_artisan(artisan_id):
     conn.commit()
     conn.close()
 
-# --- NOUVELLES FONCTIONS PHARMACIES ---
 def ajouter_pharmacie(nom, commune, contact, localisation):
     conn = get_connection()
     cursor = conn.cursor()
@@ -215,7 +213,6 @@ def obtenir_pharmacies(commune_filtre=""):
     return [{"nom": r[0], "commune": r[1], "contact": r[2], "localisation": r[3]} for r in lignes]
 
 def vider_pharmacies():
-    """Permet à l'admin de vider l'ancienne liste pour mettre la nouvelle semaine"""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM pharmacies")
