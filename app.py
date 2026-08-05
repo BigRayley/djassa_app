@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 import database
 
 database.init_db()
@@ -35,19 +34,6 @@ if choix == "Accueil / Recherche":
         st.info("Aucun artisan trouvé avec ces critères.")
     else:
         st.success(f"{len(artisans)} artisan(s) trouvé(s)")
-        
-        # --- ÉTAPE 3 : CARTE INTERACTIVE DES ARTISANS ---
-        st.subheader("📍 Carte des prestataires trouvés")
-        df_coords = pd.DataFrame([{
-            'lat': art['lat'], 
-            'lon': art['lon'], 
-            'nom': art['nom'], 
-            'metier': art['metier']
-        } for art in artisans])
-        st.map(df_coords, latitude='lat', longitude='lon', size=50, zoom=11)
-        
-        st.markdown("---")
-
         for art in artisans:
             moyenne, nb_avis = database.obtenir_note_moyenne(art['id'])
             etoiles_affichage = f"⭐ {moyenne}/5 ({nb_avis} avis)" if nb_avis > 0 else "⭐ Nouveau (Pas encore d'avis)"
@@ -66,7 +52,6 @@ if choix == "Accueil / Recherche":
                 
                 st.markdown("---")
                 
-                # --- MESSAGERIE INTERNE (CHAT) ---
                 st.subheader("💬 Discuter en direct avec l'artisan")
                 messages = database.obtenir_messages(art['id'])
                 
@@ -92,7 +77,6 @@ if choix == "Accueil / Recherche":
 
                 st.markdown("---")
                 
-                # --- AVIS ET NOTES DYNAMIQUES ---
                 st.subheader(f"⭐ Avis clients ({moyenne}/5 sur {nb_avis} avis)")
                 avis_list = database.obtenir_avis(art['id'])
                 if avis_list:
@@ -113,55 +97,79 @@ if choix == "Accueil / Recherche":
 elif choix == "Espace Prestataire (Inscription / Connexion)":
     st.header("🛠️ Espace Prestataire")
     
-    action = st.radio("Que souhaitez-vous faire ?", ["S'inscrire", "Se connecter"])
-    
-    if action == "S'inscrire":
-        st.subheader("Enregistrer un nouvel établissement / service")
-        with st.form("form_inscription"):
-            nom = st.text_input("Nom de l'entreprise ou de l'artisan")
-            metier = st.text_input("Métier / Service (ex: Plombier, Menuisier...)")
-            commune = st.selectbox("Commune", ["Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"])
-            description = st.text_area("Description de vos services")
-            badge = st.text_input("Badge (ex: Vérifié, Professionnel...)")
-            appel_url = st.text_input("Lien d'appel (ex: tel:+225...)")
-            whatsapp_url = st.text_input("Lien WhatsApp (ex: https://wa.me/225...)")
-            password = st.text_input("Mot de passe pour gérer votre espace", type="password")
-            
-            # Optionnel : champs de latitude et longitude
-            st.caption("Coordonnées GPS (Optionnel - Par défaut à Abidjan)")
-            lat = st.number_input("Latitude", value=5.3600, format="%.4f")
-            lon = st.number_input("Longitude", value=-4.0083, format="%.4f")
-            
-            submit_artisan = st.form_submit_button("Valider l'enregistrement")
-            
-            if submit_artisan:
-                if nom and metier and password:
-                    database.ajouter_artisan(
-                        nom=nom,
-                        metier=metier,
-                        commune=commune,
-                        description=description,
-                        badge=badge,
-                        appel_url=appel_url,
-                        whatsapp_url=whatsapp_url,
-                        password=password,
-                        lat=lat,
-                        lon=lon
-                    )
-                    st.success("Établissement enregistré avec succès dans le cloud !")
-                else:
-                    st.error("Veuillez remplir au moins le nom, le métier et le mot de passe.")
-
-    elif action == "Se connecter":
-        st.subheader("Connexion Prestataire")
-        nom_connexion = st.text_input("Votre nom d'artisan / entreprise")
-        pwd_connexion = st.text_input("Votre mot de passe", type="password")
+    # --- ÉTAPE 4 : TABLEAU DE BORD SI L'ARTISAN EST CONNECTÉ ---
+    if 'artisan_id' in st.session_state:
+        st.success(f"🟢 Connecté en tant que : **{st.session_state['artisan_nom']}**")
         
-        if st.button("Se connecter"):
-            artisan_verif = database.verifier_connexion_artisan(nom_connexion, pwd_connexion)
-            if artisan_verif:
-                st.success(f"Bienvenue, {artisan_verif[1]} !")
-                st.session_state['artisan_id'] = artisan_verif[0]
-                st.session_state['artisan_nom'] = artisan_verif[1]
-            else:
-                st.error("Nom ou mot de passe incorrect.")
+        if st.button("🚪 Se déconnecter"):
+            del st.session_state['artisan_id']
+            del st.session_state['artisan_nom']
+            st.rerun()
+            
+        st.markdown("---")
+        st.subheader("📬 Vos Messages Reçus")
+        messages_recus = database.obtenir_messages(st.session_state['artisan_id'])
+        if messages_recus:
+            # On affiche les messages du plus récent au plus ancien
+            for msg in reversed(messages_recus):
+                date_str = msg['date_envoi'].strftime('%d/%m/%Y à %H:%M')
+                st.info(f"**De {msg['expediteur']}** ({date_str}) :\n\n{msg['contenu']}")
+        else:
+            st.write("Aucun message reçu pour le moment.")
+            
+        st.markdown("---")
+        st.subheader("⭐ Vos Avis Clients")
+        avis_recus = database.obtenir_avis(st.session_state['artisan_id'])
+        if avis_recus:
+            for av in avis_recus:
+                st.write(f"⭐ **{av['note']}/5** : {av['commentaire']}")
+        else:
+            st.write("Aucun avis reçu pour le moment.")
+            
+    # --- SINON, AFFICHER LES FORMULAIRES DE CONNEXION / INSCRIPTION ---
+    else:
+        action = st.radio("Que souhaitez-vous faire ?", ["S'inscrire", "Se connecter"])
+        
+        if action == "S'inscrire":
+            st.subheader("Enregistrer un nouvel établissement / service")
+            with st.form("form_inscription"):
+                nom = st.text_input("Nom de l'entreprise ou de l'artisan")
+                metier = st.text_input("Métier / Service (ex: Plombier, Menuisier...)")
+                commune = st.selectbox("Commune", ["Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"])
+                description = st.text_area("Description de vos services")
+                badge = st.text_input("Badge (ex: Vérifié, Professionnel...)")
+                appel_url = st.text_input("Lien d'appel (ex: tel:+225...)")
+                whatsapp_url = st.text_input("Lien WhatsApp (ex: https://wa.me/225...)")
+                password = st.text_input("Mot de passe pour gérer votre espace", type="password")
+                
+                submit_artisan = st.form_submit_button("Valider l'enregistrement")
+                
+                if submit_artisan:
+                    if nom and metier and password:
+                        database.ajouter_artisan(
+                            nom=nom,
+                            metier=metier,
+                            commune=commune,
+                            description=description,
+                            badge=badge,
+                            appel_url=appel_url,
+                            whatsapp_url=whatsapp_url,
+                            password=password
+                        )
+                        st.success("Établissement enregistré avec succès dans le cloud !")
+                    else:
+                        st.error("Veuillez remplir au moins le nom, le métier et le mot de passe.")
+
+        elif action == "Se connecter":
+            st.subheader("Connexion Prestataire")
+            nom_connexion = st.text_input("Votre nom d'artisan / entreprise")
+            pwd_connexion = st.text_input("Votre mot de passe", type="password")
+            
+            if st.button("Se connecter"):
+                artisan_verif = database.verifier_connexion_artisan(nom_connexion, pwd_connexion)
+                if artisan_verif:
+                    st.session_state['artisan_id'] = artisan_verif[0]
+                    st.session_state['artisan_nom'] = artisan_verif[1]
+                    st.rerun() # Recharge la page pour afficher le tableau de bord
+                else:
+                    st.error("Nom ou mot de passe incorrect.")
