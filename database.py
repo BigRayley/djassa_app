@@ -99,7 +99,7 @@ def obtenir_note_moyenne(artisan_id):
     res = cursor.fetchone()
     conn.close()
     if res and res[0] is not None:
-        return round(res[0], 1), res[1]  # Retourne (moyenne, nombre_total_avis)
+        return round(res[0], 1), res[1]
     return 0.0, 0
 
 def envoyer_message(artisan_id, expediteur, contenu):

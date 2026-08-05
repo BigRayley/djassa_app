@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 import database
 
 database.init_db()
@@ -34,8 +35,20 @@ if choix == "Accueil / Recherche":
         st.info("Aucun artisan trouvé avec ces critères.")
     else:
         st.success(f"{len(artisans)} artisan(s) trouvé(s)")
+        
+        # --- ÉTAPE 3 : CARTE INTERACTIVE DES ARTISANS ---
+        st.subheader("📍 Carte des prestataires trouvés")
+        df_coords = pd.DataFrame([{
+            'lat': art['lat'], 
+            'lon': art['lon'], 
+            'nom': art['nom'], 
+            'metier': art['metier']
+        } for art in artisans])
+        st.map(df_coords, latitude='lat', longitude='lon', size=50, zoom=11)
+        
+        st.markdown("---")
+
         for art in artisans:
-            # Calcul dynamique de la note moyenne
             moyenne, nb_avis = database.obtenir_note_moyenne(art['id'])
             etoiles_affichage = f"⭐ {moyenne}/5 ({nb_avis} avis)" if nb_avis > 0 else "⭐ Nouveau (Pas encore d'avis)"
 
@@ -79,7 +92,7 @@ if choix == "Accueil / Recherche":
 
                 st.markdown("---")
                 
-                # --- ÉTAPE 2 : AVIS ET NOTES DYNAMIQUES ---
+                # --- AVIS ET NOTES DYNAMIQUES ---
                 st.subheader(f"⭐ Avis clients ({moyenne}/5 sur {nb_avis} avis)")
                 avis_list = database.obtenir_avis(art['id'])
                 if avis_list:
@@ -114,6 +127,11 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
             whatsapp_url = st.text_input("Lien WhatsApp (ex: https://wa.me/225...)")
             password = st.text_input("Mot de passe pour gérer votre espace", type="password")
             
+            # Optionnel : champs de latitude et longitude
+            st.caption("Coordonnées GPS (Optionnel - Par défaut à Abidjan)")
+            lat = st.number_input("Latitude", value=5.3600, format="%.4f")
+            lon = st.number_input("Longitude", value=-4.0083, format="%.4f")
+            
             submit_artisan = st.form_submit_button("Valider l'enregistrement")
             
             if submit_artisan:
@@ -126,7 +144,9 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
                         badge=badge,
                         appel_url=appel_url,
                         whatsapp_url=whatsapp_url,
-                        password=password
+                        password=password,
+                        lat=lat,
+                        lon=lon
                     )
                     st.success("Établissement enregistré avec succès dans le cloud !")
                 else:
