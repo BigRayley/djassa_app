@@ -1,9 +1,13 @@
 import psycopg2
 
-# URL de connexion avec le mot de passe encodé (%40 à la place de @)
-DATABASE_URL = "postgresql://postgres:Armelo0731@db.twbrxvmizmjbgpxxrdsq.supabase.co:5432/postgres"
 def get_connection():
-    return psycopg2.connect(DATABASE_URL)
+    return psycopg2.connect(
+        host="aws-0-eu-central-1.pooler.supabase.com",  # Si tu as une autre région dans Supabase, remplace l'hôte ici
+        port=6543,                                       # Port du pooler IPv4
+        dbname="postgres",
+        user="postgres.twbrxvmizmjbgpxxrdsq",            # Identifiant complet Supabase Pooler
+        password="Armelo0731@"                           # Ton mot de passe tel quel !
+    )
 
 def init_db():
     try:
