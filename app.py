@@ -42,19 +42,21 @@ st.markdown("""
 st.markdown('<div class="titre-djassa">🇨🇮 DJASSA</div>', unsafe_allow_html=True)
 st.markdown('<div class="sous-titre">Connectez-vous aux artisans et prestataires en Côte d\'Ivoire</div>', unsafe_allow_html=True)
 
-# --- MENU COMPLET AVEC TOUTES LES FONCTIONNALITÉS ---
+# --- NAVIGATION PRINCIPALE DIRECTE (PLUS DE RISQUE DE LA RATER) ---
 menu = [
-    "Accueil / Recherche", 
-    "Pharmacies de Garde", 
-    "Pass Internet (Orange, MTN, Moov)", 
-    "Espace Prestataire (Inscription / Connexion)", 
-    "Espace Administrateur"
+    "🔍 Accueil / Recherche", 
+    "🏥 Pharmacies de Garde", 
+    "🌐 Pass Internet", 
+    "🛠️ Espace Prestataire", 
+    "👑 Espace Administrateur"
 ]
-choix = st.sidebar.selectbox("Navigation", menu)
+
+choix = st.radio("Navigation principale :", menu, horizontal=True)
+st.markdown("---")
 
 communes_liste = ["Toutes les communes", "Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"]
 
-if choix == "Accueil / Recherche":
+if choix == "🔍 Accueil / Recherche":
     st.header("🔍 Rechercher un service ou un artisan")
     
     col1, col2, col3 = st.columns(3)
@@ -152,7 +154,7 @@ if choix == "Accueil / Recherche":
                         st.success("Avis ajouté avec succès !")
                         st.rerun()
 
-elif choix == "Pharmacies de Garde":
+elif choix == "🏥 Pharmacies de Garde":
     st.header("🏥 Pharmacies de Garde")
     st.write("Trouvez rapidement les pharmacies ouvertes pour les urgences cette semaine.")
     
@@ -172,7 +174,7 @@ elif choix == "Pharmacies de Garde":
     else:
         st.info("Aucune pharmacie de garde enregistrée pour cette commune actuellement.")
 
-elif choix == "Pass Internet (Orange, MTN, Moov)":
+elif choix == "🌐 Pass Internet":
     st.header("🌐 Catalogue des Pass Internet & Codes USSD")
     st.write("Consultez les meilleurs forfaits data du marché ivoirien et souscrivez en un clic.")
     
@@ -185,13 +187,13 @@ elif choix == "Pass Internet (Orange, MTN, Moov)":
         with col_o1:
             st.markdown("""
             * **Pass 2 Jours (200F) :** 220 Mo
-            * **Pass Semaine (1 000F) :** 1.5 Go + WaW Muzik
+            * **Pass Semaine (1 000F) :** 1.5 Go
             * **Pass Mois (5 000F) :** 7.2 Go
             """)
         with col_o2:
             st.markdown("""
             * **Pass Nuit (250F) :** 2 Go (21h - 07h)
-            * **Pass Social Semaine (500F) :** 1 Go (Réseaux Sociaux)
+            * **Pass Social Semaine (500F) :** 1 Go
             * **Pass Mois (10 000F) :** 15 Go
             """)
             
@@ -229,7 +231,7 @@ elif choix == "Pass Internet (Orange, MTN, Moov)":
             * **Pass Mensuel Mega (14 900F) :** 40 Go
             """)
 
-elif choix == "Espace Prestataire (Inscription / Connexion)":
+elif choix == "🛠️ Espace Prestataire":
     st.header("🛠️ Espace Prestataire")
     
     if 'artisan_id' in st.session_state:
@@ -314,7 +316,7 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
                 else:
                     st.error("Nom ou mot de passe incorrect.")
 
-elif choix == "Espace Administrateur":
+elif choix == "👑 Espace Administrateur":
     st.header("👑 Panneau de Contrôle Administrateur")
     
     admin_pwd = st.text_input("Mot de passe administrateur", type="password")
