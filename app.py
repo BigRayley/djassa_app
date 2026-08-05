@@ -14,21 +14,16 @@ choix = st.sidebar.selectbox("Navigation", menu)
 if choix == "Accueil / Recherche":
     st.header("🔍 Rechercher un service ou un artisan")
     
-    # Séparation en 3 barres de recherche distinctes
     col1, col2, col3 = st.columns(3)
-    
     with col1:
         recherche_nom = st.text_input("Nom de l'artisan / entreprise")
     with col2:
-        # Liste des communes de Côte d'Ivoire / Abidjan
         communes_dispo = ["Toutes les communes", "Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"]
         commune_filtre = st.selectbox("Commune", communes_dispo)
     with col3:
-        # Métiers / Services
         metiers_dispo = ["Tous les services", "Plombier", "Menuisier", "Électricien", "Maçon", "Peintre", "Climatisation", "Mécanicien", "Couturier"]
         metier_filtre = st.selectbox("Service / Métier", metiers_dispo)
     
-    # Recherche intelligente combinant les critères
     query_finale = recherche_nom
     if metier_filtre != "Tous les services":
         query_finale = f"{recherche_nom} {metier_filtre}".strip()
@@ -53,7 +48,34 @@ if choix == "Accueil / Recherche":
                         st.link_button("💬 WhatsApp", art['whatsapp_url'])
                 
                 st.markdown("---")
-                st.subheader("Avis clients")
+                
+                # --- ÉTAPE 1 : MESSAGERIE INTERNE (CHAT) ---
+                st.subheader("💬 Discuter en direct avec l'artisan")
+                messages = database.obtenir_messages(art['id'])
+                
+                # Zone d'affichage des messages
+                chat_container = st.container(height=200)
+                with chat_container:
+                    if messages:
+                        for msg in messages:
+                            st.write(f"**{msg['expediteur']}** : {msg['contenu']}")
+                    else:
+                        st.caption("Aucun message pour l'instant. Envoyez le premier !")
+                
+                with st.form(f"form_chat_{art['id']}", clear_on_submit=True):
+                    nom_expediteur = st.text_input("Votre nom / pseudo", key=f"exp_{art['id']}")
+                    texte_message = st.text_input("Votre message", key=f"txt_{art['id']}")
+                    send_msg = st.form_submit_button("Envoyer le message")
+                    if send_msg:
+                        if nom_expediteur and texte_message:
+                            database.envoyer_message(art['id'], nom_expediteur, texte_message)
+                            st.success("Message envoyé !")
+                            st.rerun()
+                        else:
+                            st.warning("Veuillez remplir votre nom et votre message.")
+
+                st.markdown("---")
+                st.subheader("⭐ Avis clients")
                 avis_list = database.obtenir_avis(art['id'])
                 if avis_list:
                     for av in avis_list:

@@ -12,9 +12,44 @@ def get_connection():
 def init_db():
     try:
         conn = get_connection()
+        cursor = conn.cursor()
+        # Création des tables si elles n'existent pas
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS artisans (
+                id SERIAL PRIMARY KEY,
+                nom TEXT,
+                metier TEXT,
+                commune TEXT,
+                description TEXT,
+                badge TEXT,
+                appel_url TEXT,
+                whatsapp_url TEXT,
+                password TEXT DEFAULT '1234',
+                lat FLOAT DEFAULT 5.3600,
+                lon FLOAT DEFAULT -4.0083
+            );
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS avis (
+                id SERIAL PRIMARY KEY,
+                artisan_id INT REFERENCES artisans(id),
+                note INT,
+                commentaire TEXT
+            );
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS messages (
+                id SERIAL PRIMARY KEY,
+                artisan_id INT REFERENCES artisans(id),
+                expediteur TEXT,
+                contenu TEXT,
+                date_envoi TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        conn.commit()
         conn.close()
     except Exception as e:
-        print(f"Erreur DB: {e}")
+        print(f"Erreur DB init: {e}")
 
 def ajouter_artisan(nom, metier, commune, description, badge, appel_url, whatsapp_url, password="1234", lat=5.3600, lon=-4.0083):
     conn = get_connection()
@@ -58,20 +93,20 @@ def obtenir_avis(artisan_id):
     conn.close()
     return [{"note": r[0], "commentaire": r[1]} for r in lignes]
 
-def envoyer_message(artisan_id, expediteur, contenu, image_url=None):
+def envoyer_message(artisan_id, expediteur, contenu):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO messages (artisan_id, expediteur, contenu, image_url) VALUES (%s, %s, %s, %s)", (artisan_id, expediteur, contenu, image_url))
+    cursor.execute("INSERT INTO messages (artisan_id, expediteur, contenu) VALUES (%s, %s, %s)", (artisan_id, expediteur, contenu))
     conn.commit()
     conn.close()
 
 def obtenir_messages(artisan_id):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT expediteur, contenu, image_url, date_envoi FROM messages WHERE artisan_id = %s ORDER BY date_envoi DESC", (artisan_id,))
+    cursor.execute("SELECT expediteur, contenu, date_envoi FROM messages WHERE artisan_id = %s ORDER BY date_envoi ASC", (artisan_id,))
     lignes = cursor.fetchall()
     conn.close()
-    return [{"expediteur": r[0], "contenu": r[1], "image_url": r[2], "date_envoi": r[3]} for r in lignes]
+    return [{"expediteur": r[0], "contenu": r[1], "date_envoi": r[2]} for r in lignes]
 
 def verifier_connexion_artisan(nom_artisan, password):
     conn = get_connection()
