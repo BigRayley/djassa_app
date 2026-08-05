@@ -11,52 +11,92 @@ except Exception as e:
 
 st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="centered")
 
+# --- DESIGN SYSTEM INSPIRÉ DE TRANSFERT CI ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    
+    /* Style général du corps et des conteneurs */
+    .stApp {
+        background-color: #F8F9FA;
+    }
+    
+    /* Bandeau supérieur style fintech */
+    .top-banner {
+        background: linear-gradient(135deg, #FF7A00 0%, #FF9900 100%);
+        padding: 25px;
+        border-radius: 0 0 25px 25px;
+        color: white;
+        text-align: center;
+        margin-bottom: 25px;
+        box-shadow: 0px 4px 15px rgba(255, 122, 0,.2);
+    }
+    .top-banner h1 {
+        margin: 0;
+        font-size: 32px;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+    }
+    .top-banner p {
+        margin: 5px 0 0 0;
+        font-size: 15px;
+        opacity: 0.9;
+    }
+
+    /* Boutons de navigation stylisés */
     .stButton>button {
-        background-color: #FF8C00;
+        background-color: #FF7A00;
         color: white !important;
-        border-radius: 8px;
+        border-radius: 12px;
         border: none;
         font-weight: bold;
+        padding: 10px 20px;
+        box-shadow: 0px 4px 10px rgba(255, 122, 0, 0.2);
+        transition: all 0.3s ease;
     }
-    .titre-djassa {
-        text-align: center;
-        color: #2C3E50;
-        font-size: 40px;
-        font-weight: 900;
-        margin-bottom: 5px;
+    .stButton>button:hover {
+        background-color: #E06B00;
+        transform: translateY(-2px);
     }
-    .sous-titre {
+    
+    /* Cartes de service */
+    .service-card {
+        background: white;
+        padding: 20px;
+        border-radius: 16px;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.05);
         text-align: center;
-        color: #7F8C8D;
-        font-size: 18px;
-        margin-bottom: 30px;
+        margin-bottom: 15px;
+        border: 1px solid #EFEFEF;
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="titre-djassa">🇨🇮 DJASSA</div>', unsafe_allow_html=True)
-st.markdown('<div class="sous-titre">Connectez-vous aux artisans et prestataires en Côte d\'Ivoire</div>', unsafe_allow_html=True)
+# En-tête visuel inspiré de l'application
+st.markdown("""
+    <div class="top-banner">
+        <h1>🇨🇮 DJASSA</h1>
+        <p>La cabine numérique et services de proximité en Côte d'Ivoire</p>
+    </div>
+""", unsafe_allow_html=True)
 
-# --- NAVIGATION PRINCIPALE ---
-menu = [
-    "🔍 Accueil / Recherche", 
+# --- MENU PRINCIPAL AVEC ICONES ADAPTÉES ---
+menu_options = [
+    "🔍 Annuaire & Artisans", 
     "🏥 Pharmacies de Garde", 
-    "🌐 Pass Internet & Achat Wave", 
+    "🌐 Pass Internet & Wave", 
     "🛠️ Espace Prestataire", 
-    "👑 Espace Administrateur"
+    "👑 Administration"
 ]
 
-choix = st.radio("Navigation principale :", menu, horizontal=True)
-st.markdown("---")
+choix = st.radio("Navigation rapide :", menu_options, horizontal=True)
+st.markdown("<br>", unsafe_allow_html=True)
 
 communes_liste = ["Toutes les communes", "Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"]
 
-if choix == "🔍 Accueil / Recherche":
+if choix == "🔍 Annuaire & Artisans":
     st.header("🔍 Rechercher un service ou un artisan")
     
     col1, col2, col3 = st.columns(3)
@@ -77,9 +117,9 @@ if choix == "🔍 Accueil / Recherche":
     if not artisans:
         st.info("Aucun artisan trouvé avec ces critères.")
     else:
-        st.success(f"{len(artisans)} artisan(s) trouvé(s)")
+        st.success(f"{len(artisans)} prestataire(s) trouvé(s)")
         
-        st.subheader("🗺️ Carte des artisans")
+        st.subheader("🗺️ Localisation des prestataires")
         df_map = pd.DataFrame([{"lat": a["lat"], "lon": a["lon"]} for a in artisans if a.get("lat") and a.get("lon")])
         if not df_map.empty:
             st.map(df_map, zoom=11)
@@ -89,7 +129,7 @@ if choix == "🔍 Accueil / Recherche":
             moyenne, nb_avis = database.obtenir_note_moyenne(art['id'])
             etoiles_affichage = f"⭐ {moyenne}/5 ({nb_avis} avis)" if nb_avis > 0 else "⭐ Nouveau"
 
-            with st.expander(f"{art['nom']} - {art['metier']} ({art['commune']}) | {etoiles_affichage}"):
+            with st.expander(f"🛠️ {art['nom']} - {art['metier']} ({art['commune']}) | {etoiles_affichage}"):
                 st.write(f"**Description :** {art['description']}")
                 st.write(f"**Badge :** {art['badge']}")
                 
@@ -112,7 +152,7 @@ if choix == "🔍 Accueil / Recherche":
                             st.image(f"data:image/png;base64,{img_data['image_b64']}", caption=img_data['description'], use_container_width=True)
                     st.markdown("---")
 
-                st.subheader("💬 Discuter en direct avec l'artisan")
+                st.subheader("💬 Discuter en direct avec le prestataire")
                 messages = database.obtenir_messages(art['id'])
                 
                 chat_container = st.container(height=200)
@@ -174,74 +214,67 @@ elif choix == "🏥 Pharmacies de Garde":
     else:
         st.info("Aucune pharmacie de garde enregistrée pour cette commune actuellement.")
 
-elif choix == "🌐 Pass Internet & Achat Wave":
-    st.header("🌐 Commande de Pass Internet & Paiement Wave")
-    st.write("Choisissez votre opérateur, sélectionnez votre pass, entrez votre numéro et procédez au paiement instantané via Wave.")
+elif choix == "🌐 Pass Internet & Wave":
+    st.header("🌐 Souscription Mobile & Paiement Wave")
+    st.write("Procédé instantané : choisissez votre forfait, entrez votre numéro, payez via Wave et recevez votre offre.")
     
-    operateur = st.selectbox("1. Choisissez l'opérateur :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
+    operateur = st.selectbox("1. Choisissez l'opérateur mobile :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
     
-    # Dictionnaire des offres disponibles pour le tunnel d'achat
     offres_par_operateur = {
         "Orange Côte d'Ivoire": {
-            "Pass 1 Heure (100F - 100 Mo)": 100,
-            "Pass Nuit (250F - 2 Go)": 250,
-            "Pass 24H (200F - 220 Mo)": 200,
-            "Pass 24H (500F - 750 Mo)": 500,
-            "Pass Semaine (1 000F - 1.5 Go)": 1000,
-            "Pass Mois (5 000F - 7.2 Go)": 5000,
-            "Pass Mois (10 000F - 15 Go)": 10000
+            "🔥 [Offre Perso] Pass Bonus Yamo (200F - 220 Mo)": 200,
+            "⚡ Pass Nuit (250F - 2 Go)": 250,
+            "📅 Pass 24H (500F - 750 Mo)": 500,
+            "📆 Pass Semaine (1 000F - 1.5 Go)": 1000,
+            "🌙 Pass Mois (5 000F - 7.2 Go)": 5000,
+            "🌙 Pass Mois (10 000F - 15 Go)": 10000
         },
         "MTN Côte d'Ivoire": {
-            "Pass 1 Heure (100F - 120 Mo)": 100,
-            "Pass Nuit (150F - 500 Mo)": 150,
-            "Pass Jour (300F - 400 Mo)": 300,
-            "Pass Semaine (1 000F - 1.5 Go)": 1000,
-            "Pass Mois (2 500F - 5 Go)": 2500,
-            "Pass Mois (5 000F - 10 Go)": 5000,
-            "Pass Mois (10 000F - 25 Go)": 10000
+            "🔥 [Offre Perso] Pass Awoulaba (150F - 150 Mo)": 150,
+            "⚡ Pass Nuit Max (300F - 3 Go)": 300,
+            "📅 Pass Jour (300F - 400 Mo)": 300,
+            "📆 Pass Semaine (1 000F - 1.5 Go)": 1000,
+            "🌙 Pass Mois (2 500F - 5 Go)": 2500,
+            "🌙 Pass Mois (10 000F - 25 Go)": 10000
         },
         "Moov Africa CI": {
-            "Pass Heure (100F - 150 Mo)": 100,
-            "Pass Nuit (200F - 2 Go)": 200,
-            "Pass Weekend (500F - 2.5 Go)": 500,
-            "Pass Semaine (750F - 1 Go)": 750,
-            "Pass Mois (5 000F - 7 Go)": 5000,
-            "Pass Mois (10 000F - 20 Go)": 10000
+            "🔥 [Offre Perso] Pass Flooz Bonus (150F - 150 Mo)": 150,
+            "⚡ Pass Nuit (200F - 2 Go)": 200,
+            "📅 Pass Weekend (500F - 2.5 Go)": 500,
+            "📆 Pass Semaine (750F - 1 Go)": 750,
+            "🌙 Pass Mois (5 000F - 7 Go)": 5000,
+            "🌙 Pass Mois (10 000F - 20 Go)": 10000
         }
     }
     
     st.markdown("---")
-    st.subheader("2. Sélectionnez votre Pass")
-    pass_choisi = st.selectbox("Catalogue des offres :", list(offres_par_operateur[operateur].keys()))
+    st.subheader("2. Sélectionnez votre offre")
+    pass_choisi = st.selectbox("Catalogue des pass disponibles :", list(offres_par_operateur[operateur].keys()))
     montant = offres_par_operateur[operateur][pass_choisi]
     
-    st.markdown(f"💰 **Montant à payer :** `{montant} FCFA`")
+    st.markdown(f"💳 **Montant total à régler :** `{montant} FCFA`")
     
     st.markdown("---")
-    st.subheader("3. Informations de réception & Paiement")
+    st.subheader("3. Numéro de téléphone à recharger & Paiement")
     
-    with st.form("form_achat_pass"):
-        numero_client = st.text_input("Votre numéro de téléphone à recharger (ex: 07XXXXXXXX / 05XXXXXXXX / 01XXXXXXXX)")
-        email_client = st.text_input("Votre email ou pseudo (pour le suivi)")
+    with st.form("form_souscription_transfertci"):
+        numero_client = st.text_input("Votre numéro de téléphone (ex: 07 / 05 / 01...)")
         
-        submit_paiement = st.form_submit_button("💳 Payer avec Wave & Activer le Pass")
+        submit_commande = st.form_submit_button("🚀 Valider et Payer avec Wave")
         
-        if submit_paiement:
+        if submit_commande:
             if numero_client and len(numero_client) >= 10:
-                st.success(f"🎉 Commande enregistrée pour le numéro **{numero_client}** !")
-                st.info(f"Redirection sécurisée vers **Wave** pour le règlement de **{montant} FCFA**...")
+                st.success(f"✅ Commande enregistrée pour le **{numero_client}** !")
+                st.info(f"Montant : **{montant} FCFA** - Redirection vers la passerelle de paiement **Wave** en cours...")
                 
-                # Lien de paiement Wave (Ici simulation ou lien Wave Me officiel)
-                # Remplace par ton lien de paiement marchand Wave personnel ou professionnel
-                lien_wave = f"https://pay.wave.com/m/M_CI_xxxxxxxxxxxx?amount={montant}&lock_amount=true"
-                
+                # Redirection vers le lien de paiement Wave sécurisé
                 st.markdown(f"""
-                ### 📲 Étape finale :
-                Clique sur le bouton ci-dessous pour valider ton paiement de **{montant} FCFA** sur ton application Wave. Dès validation, ton pass sera envoyé instantanément sur le **{numero_client}** !
+                ### 📲 Paiement instantané Wave :
+                Cliquez sur le bouton ci-dessous pour régler les **{montant} FCFA** sur Wave. Dès confirmation du paiement, l'offre sera automatiquement injectée sur votre numéro **{numero_client}** !
                 """)
-                st.link_button("👉 Ouvrir Wave pour payer", "https://pay.wave.com/")
+                st.link_button("👉 Ouvrir l'application Wave pour régler", "https://pay.wave.com/")
             else:
-                st.error("Veuillez entrer un numéro de téléphone valide (10 chiffres).")
+                st.error("Veuillez entrer un numéro de téléphone valide à 10 chiffres.")
 
 elif choix == "🛠️ Espace Prestataire":
     st.header("🛠️ Espace Prestataire")
@@ -328,7 +361,7 @@ elif choix == "🛠️ Espace Prestataire":
                 else:
                     st.error("Nom ou mot de passe incorrect.")
 
-elif choix == "👑 Espace Administrateur":
+elif choix == "👑 Administration":
     st.header("👑 Panneau de Contrôle Administrateur")
     
     admin_pwd = st.text_input("Mot de passe administrateur", type="password")
