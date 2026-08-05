@@ -149,3 +149,34 @@ def obtenir_portfolio(artisan_id):
     lignes = cursor.fetchall()
     conn.close()
     return [{"image_b64": r[0], "description": r[1]} for r in lignes]
+# --- NOUVELLES FONCTIONS ADMINISTRATEUR ---
+def obtenir_toutes_les_stats():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM artisans")
+    nb_artisans = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM avis")
+    nb_avis = cursor.fetchone()[0]
+    cursor.execute("SELECT COUNT(*) FROM messages")
+    nb_messages = cursor.fetchone()[0]
+    conn.close()
+    return nb_artisans, nb_avis, nb_messages
+
+def obtenir_tous_les_artisans_admin():
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, nom, metier, commune FROM artisans ORDER BY id DESC")
+    lignes = cursor.fetchall()
+    conn.close()
+    return [{"id": r[0], "nom": r[1], "metier": r[2], "commune": r[3]} for r in lignes]
+
+def supprimer_artisan(artisan_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    # Il faut supprimer les données liées (messages, avis, portfolio) avant de supprimer l'artisan
+    cursor.execute("DELETE FROM portfolio WHERE artisan_id = %s", (artisan_id,))
+    cursor.execute("DELETE FROM messages WHERE artisan_id = %s", (artisan_id,))
+    cursor.execute("DELETE FROM avis WHERE artisan_id = %s", (artisan_id,))
+    cursor.execute("DELETE FROM artisans WHERE id = %s", (artisan_id,))
+    conn.commit()
+    conn.close()

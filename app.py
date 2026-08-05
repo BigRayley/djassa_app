@@ -10,7 +10,7 @@ st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="centered")
 st.title("🇨🇮 DJASSA")
 st.subheader("Connectez-vous aux artisans et prestataires en Côte d'Ivoire")
 
-menu = ["Accueil / Recherche", "Espace Prestataire (Inscription / Connexion)"]
+menu = ["Accueil / Recherche", "Espace Prestataire (Inscription / Connexion)", "Espace Administrateur"]
 choix = st.sidebar.selectbox("Navigation", menu)
 
 if choix == "Accueil / Recherche":
@@ -209,3 +209,44 @@ elif choix == "Espace Prestataire (Inscription / Connexion)":
                     st.rerun()
                 else:
                     st.error("Nom ou mot de passe incorrect.")
+                    elif choix == "Espace Administrateur":
+    st.header("👑 Panneau de Contrôle Administrateur")
+    
+    # Mot de passe sécurisé pour l'admin
+    admin_pwd = st.text_input("Mot de passe administrateur", type="password")
+    
+    # Le mot de passe pour rentrer est : djassa_admin_2026
+    if admin_pwd == "djassa_admin_2026":
+        st.success("Accès autorisé. Bienvenue boss !")
+        
+        # Affichage des statistiques
+        st.subheader("📊 Statistiques de la plateforme")
+        nb_artisans, nb_avis, nb_messages = database.obtenir_toutes_les_stats()
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Prestataires inscrits", nb_artisans)
+        col2.metric("Avis publiés", nb_avis)
+        col3.metric("Messages envoyés", nb_messages)
+        
+        st.markdown("---")
+        
+        # Gestion des prestataires
+        st.subheader("🛠️ Gérer les prestataires")
+        tous_les_artisans = database.obtenir_tous_les_artisans_admin()
+        
+        if tous_les_artisans:
+            for art in tous_les_artisans:
+                with st.container():
+                    col_nom, col_btn = st.columns([3, 1])
+                    with col_nom:
+                        st.write(f"**{art['nom']}** - {art['metier']} ({art['commune']})")
+                    with col_btn:
+                        if st.button("❌ Supprimer", key=f"del_{art['id']}"):
+                            database.supprimer_artisan(art['id'])
+                            st.rerun()
+                    st.divider()
+        else:
+            st.info("Aucun prestataire inscrit pour le moment.")
+            
+    elif admin_pwd != "":
+        st.error("Mot de passe incorrect.")
