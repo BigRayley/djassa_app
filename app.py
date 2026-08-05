@@ -11,102 +11,112 @@ except Exception as e:
 
 st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="centered")
 
-# --- DESIGN SYSTEM INSPIRÉ DE TRANSFERT CI ---
+# --- DESIGN IDENTIQUE À TRANSFERT CI (BANDEAU ORANGE & COMPOSANTS) ---
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Style général du corps et des conteneurs */
     .stApp {
-        background-color: #F8F9FA;
+        background-color: #F7F8FA;
     }
     
-    /* Bandeau supérieur style fintech */
-    .top-banner {
+    /* Grand bandeau supérieur orange arrondi */
+    .hero-banner {
         background: linear-gradient(135deg, #FF7A00 0%, #FF9900 100%);
-        padding: 25px;
-        border-radius: 0 0 25px 25px;
+        padding: 30px 20px 70px 20px;
+        border-radius: 0 0 35px 35px;
         color: white;
         text-align: center;
-        margin-bottom: 25px;
-        box-shadow: 0px 4px 15px rgba(255, 122, 0,.2);
+        box-shadow: 0px 8px 20px rgba(255, 122, 0, 0.25);
     }
-    .top-banner h1 {
+    .hero-banner h1 {
         margin: 0;
-        font-size: 32px;
+        font-size: 34px;
         font-weight: 900;
-        letter-spacing: 0.5px;
     }
-    .top-banner p {
+    .hero-banner p {
         margin: 5px 0 0 0;
         font-size: 15px;
-        opacity: 0.9;
+        opacity: 0.95;
     }
 
-    /* Boutons de navigation stylisés */
+    /* Carte Scanner centrale en relief */
+    .scanner-card {
+        background: white;
+        padding: 25px;
+        border-radius: 24px;
+        box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.08);
+        text-align: center;
+        margin: -50px auto 25px auto;
+        width: 85%;
+        max-width: 400px;
+        border: 1px solid #F0F0F0;
+    }
+
+    /* Boutons de navigation et actions */
     .stButton>button {
         background-color: #FF7A00;
         color: white !important;
-        border-radius: 12px;
+        border-radius: 14px;
         border: none;
         font-weight: bold;
-        padding: 10px 20px;
-        box-shadow: 0px 4px 10px rgba(255, 122, 0, 0.2);
+        padding: 12px 24px;
+        width: 100%;
+        box-shadow: 0px 4px 12px rgba(255, 122, 0, 0.2);
         transition: all 0.3s ease;
     }
     .stButton>button:hover {
         background-color: #E06B00;
         transform: translateY(-2px);
     }
-    
-    /* Cartes de service */
-    .service-card {
-        background: white;
-        padding: 20px;
-        border-radius: 16px;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.05);
-        text-align: center;
-        margin-bottom: 15px;
-        border: 1px solid #EFEFEF;
-    }
     </style>
 """, unsafe_allow_html=True)
 
-# En-tête visuel inspiré de l'application
+# 1. Bandeau supérieur orange
 st.markdown("""
-    <div class="top-banner">
+    <div class="hero-banner">
         <h1>🇨🇮 DJASSA</h1>
-        <p>La cabine numérique et services de proximité en Côte d'Ivoire</p>
+        <p>Votre plateforme de services et proximité en Côte d'Ivoire</p>
     </div>
 """, unsafe_allow_html=True)
 
-# --- MENU PRINCIPAL AVEC ICONES ADAPTÉES ---
-menu_options = [
-    "🔍 Annuaire & Artisans", 
-    "🏥 Pharmacies de Garde", 
-    "🌐 Pass Internet & Wave", 
-    "🛠️ Espace Prestataire", 
-    "👑 Administration"
-]
+# 2. Carte centrale style "Scanner / Action rapide"
+st.markdown("""
+    <div class="scanner-card">
+        <h3 style="margin:0 0 10px 0; color:#2C3E50; font-size:18px;">📱 Accès Rapide & Flash</h3>
+        <p style="color:#7F8C8D; font-size:13px; margin:0;">Scannez ou choisissez un service ci-dessous</p>
+    </div>
+""", unsafe_allow_html=True)
 
-choix = st.radio("Navigation rapide :", menu_options, horizontal=True)
-st.markdown("<br>", unsafe_allow_html=True)
+# 3. Menu de sélection des fonctions propres à DJASSA (avec logos/icônes adaptés)
+menu_choix = st.selectbox(
+    "🧭 Sélectionnez une fonctionnalité :", 
+    [
+        "🔍 Annuaire & Artisans", 
+        "🏥 Pharmacies de Garde", 
+        "🌐 Pass Internet & Offres Mobiles", 
+        "🛠️ Espace Prestataire", 
+        "👑 Espace Administrateur"
+    ]
+)
+
+st.markdown("---")
 
 communes_liste = ["Toutes les communes", "Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"]
 
-if choix == "🔍 Annuaire & Artisans":
-    st.header("🔍 Rechercher un service ou un artisan")
+if menu_choix == "🔍 Annuaire & Artisans":
+    st.header("🔍 Rechercher un artisan ou un service")
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        recherche_nom = st.text_input("Nom de l'artisan / entreprise")
+        recherche_nom = st.text_input("Nom ou entreprise")
     with col2:
         commune_filtre = st.selectbox("Commune", communes_liste)
     with col3:
         metiers_dispo = ["Tous les services", "Plombier", "Menuisier", "Électricien", "Maçon", "Peintre", "Climatisation", "Mécanicien", "Couturier"]
-        metier_filtre = st.selectbox("Service / Métier", metiers_dispo)
+        metier_filtre = st.selectbox("Métier", metiers_dispo)
     
     query_finale = recherche_nom
     if metier_filtre != "Tous les services":
@@ -119,7 +129,7 @@ if choix == "🔍 Annuaire & Artisans":
     else:
         st.success(f"{len(artisans)} prestataire(s) trouvé(s)")
         
-        st.subheader("🗺️ Localisation des prestataires")
+        st.subheader("🗺️ Carte des prestataires")
         df_map = pd.DataFrame([{"lat": a["lat"], "lon": a["lon"]} for a in artisans if a.get("lat") and a.get("lon")])
         if not df_map.empty:
             st.map(df_map, zoom=11)
@@ -152,7 +162,7 @@ if choix == "🔍 Annuaire & Artisans":
                             st.image(f"data:image/png;base64,{img_data['image_b64']}", caption=img_data['description'], use_container_width=True)
                     st.markdown("---")
 
-                st.subheader("💬 Discuter en direct avec le prestataire")
+                st.subheader("💬 Discuter en direct")
                 messages = database.obtenir_messages(art['id'])
                 
                 chat_container = st.container(height=200)
@@ -161,22 +171,20 @@ if choix == "🔍 Annuaire & Artisans":
                         for msg in messages:
                             st.write(f"**{msg['expediteur']}** : {msg['contenu']}")
                     else:
-                        st.caption("Aucun message pour l'instant. Envoyez le premier !")
+                        st.caption("Aucun message pour l'instant.")
                 
                 with st.form(f"form_chat_{art['id']}", clear_on_submit=True):
                     nom_expediteur = st.text_input("Votre nom / pseudo", key=f"exp_{art['id']}")
                     texte_message = st.text_input("Votre message", key=f"txt_{art['id']}")
-                    send_msg = st.form_submit_button("Envoyer le message")
-                    if send_msg:
+                    if st.form_submit_button("Envoyer le message"):
                         if nom_expediteur and texte_message:
                             database.envoyer_message(art['id'], nom_expediteur, texte_message)
                             st.success("Message envoyé !")
                             st.rerun()
                         else:
-                            st.warning("Veuillez remplir votre nom et votre message.")
+                            st.warning("Remplissez votre nom et votre message.")
 
                 st.markdown("---")
-                
                 st.subheader(f"⭐ Avis clients ({moyenne}/5 sur {nb_avis} avis)")
                 avis_list = database.obtenir_avis(art['id'])
                 if avis_list:
@@ -188,18 +196,16 @@ if choix == "🔍 Annuaire & Artisans":
                 with st.form(f"form_avis_{art['id']}"):
                     note = st.slider("Note", 1, 5, 5, key=f"slider_{art['id']}")
                     commentaire = st.text_area("Votre commentaire", key=f"comm_{art['id']}")
-                    submit_avis = st.form_submit_button("Laisser un avis")
-                    if submit_avis:
+                    if st.form_submit_button("Laisser un avis"):
                         database.ajouter_avis(art['id'], note, commentaire)
-                        st.success("Avis ajouté avec succès !")
+                        st.success("Avis ajouté !")
                         st.rerun()
 
-elif choix == "🏥 Pharmacies de Garde":
+elif menu_choix == "🏥 Pharmacies de Garde":
     st.header("🏥 Pharmacies de Garde")
     st.write("Trouvez rapidement les pharmacies ouvertes pour les urgences cette semaine.")
     
     commune_pharma = st.selectbox("Sélectionnez votre commune :", communes_liste)
-    
     pharmacies_trouvees = database.obtenir_pharmacies(commune_filtre=commune_pharma)
     
     if pharmacies_trouvees:
@@ -214,11 +220,11 @@ elif choix == "🏥 Pharmacies de Garde":
     else:
         st.info("Aucune pharmacie de garde enregistrée pour cette commune actuellement.")
 
-elif choix == "🌐 Pass Internet & Wave":
-    st.header("🌐 Souscription Mobile & Paiement Wave")
-    st.write("Procédé instantané : choisissez votre forfait, entrez votre numéro, payez via Wave et recevez votre offre.")
+elif menu_choix == "🌐 Pass Internet & Offres Mobiles":
+    st.header("🌐 Souscription de Forfaits Mobiles")
+    st.write("Le même procédé instantané : choisissez votre réseau, sélectionnez votre pass, entrez votre numéro et procédez au paiement.")
     
-    operateur = st.selectbox("1. Choisissez l'opérateur mobile :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
+    operateur = st.selectbox("1. Choisissez l'opérateur :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
     
     offres_par_operateur = {
         "Orange Côte d'Ivoire": {
@@ -249,34 +255,26 @@ elif choix == "🌐 Pass Internet & Wave":
     
     st.markdown("---")
     st.subheader("2. Sélectionnez votre offre")
-    pass_choisi = st.selectbox("Catalogue des pass disponibles :", list(offres_par_operateur[operateur].keys()))
+    pass_choisi = st.selectbox("Catalogue des offres :", list(offres_par_operateur[operateur].keys()))
     montant = offres_par_operateur[operateur][pass_choisi]
     
-    st.markdown(f"💳 **Montant total à régler :** `{montant} FCFA`")
+    st.markdown(f"💳 **Montant à régler :** `{montant} FCFA`")
     
     st.markdown("---")
-    st.subheader("3. Numéro de téléphone à recharger & Paiement")
+    st.subheader("3. Numéro de téléphone & Paiement Wave")
     
-    with st.form("form_souscription_transfertci"):
+    with st.form("form_souscription"):
         numero_client = st.text_input("Votre numéro de téléphone (ex: 07 / 05 / 01...)")
         
-        submit_commande = st.form_submit_button("🚀 Valider et Payer avec Wave")
-        
-        if submit_commande:
+        if st.form_submit_button("🚀 Valider et Payer avec Wave"):
             if numero_client and len(numero_client) >= 10:
                 st.success(f"✅ Commande enregistrée pour le **{numero_client}** !")
-                st.info(f"Montant : **{montant} FCFA** - Redirection vers la passerelle de paiement **Wave** en cours...")
-                
-                # Redirection vers le lien de paiement Wave sécurisé
-                st.markdown(f"""
-                ### 📲 Paiement instantané Wave :
-                Cliquez sur le bouton ci-dessous pour régler les **{montant} FCFA** sur Wave. Dès confirmation du paiement, l'offre sera automatiquement injectée sur votre numéro **{numero_client}** !
-                """)
+                st.info(f"Montant : **{montant} FCFA** - Redirection vers la passerelle **Wave**...")
                 st.link_button("👉 Ouvrir l'application Wave pour régler", "https://pay.wave.com/")
             else:
                 st.error("Veuillez entrer un numéro de téléphone valide à 10 chiffres.")
 
-elif choix == "🛠️ Espace Prestataire":
+elif menu_choix == "🛠️ Espace Prestataire":
     st.header("🛠️ Espace Prestataire")
     
     if 'artisan_id' in st.session_state:
@@ -288,23 +286,21 @@ elif choix == "🛠️ Espace Prestataire":
             st.rerun()
             
         st.markdown("---")
-        
         st.subheader("📸 Ajouter une réalisation au Portfolio")
         uploaded_file = st.file_uploader("Choisissez une image de votre travail", type=["png", "jpg", "jpeg"])
-        desc_image = st.text_input("Petite description de l'image (ex: Meuble sur mesure)")
+        desc_image = st.text_input("Petite description de l'image")
         
         if st.button("Ajouter l'image"):
             if uploaded_file is not None:
                 bytes_data = uploaded_file.getvalue()
                 image_b64 = base64.b64encode(bytes_data).decode()
                 database.ajouter_image_portfolio(st.session_state['artisan_id'], image_b64, desc_image)
-                st.success("Super ! L'image a été ajoutée à votre profil.")
+                st.success("Image ajoutée à votre profil !")
                 st.rerun()
             else:
-                st.warning("Veuillez sélectionner une image avant de valider.")
+                st.warning("Sélectionnez une image.")
         
         st.markdown("---")
-        
         st.subheader("📬 Vos Messages Reçus")
         messages_recus = database.obtenir_messages(st.session_state['artisan_id'])
         if messages_recus:
@@ -312,7 +308,7 @@ elif choix == "🛠️ Espace Prestataire":
                 date_str = msg['date_envoi'].strftime('%d/%m/%Y à %H:%M')
                 st.info(f"**De {msg['expediteur']}** ({date_str}) :\n\n{msg['contenu']}")
         else:
-            st.write("Aucun message reçu pour le moment.")
+            st.write("Aucun message reçu.")
             
         st.markdown("---")
         st.subheader("⭐ Vos Avis Clients")
@@ -321,31 +317,29 @@ elif choix == "🛠️ Espace Prestataire":
             for av in avis_recus:
                 st.write(f"⭐ **{av['note']}/5** : {av['commentaire']}")
         else:
-            st.write("Aucun avis reçu pour le moment.")
+            st.write("Aucun avis reçu.")
             
     else:
         action = st.radio("Que souhaitez-vous faire ?", ["S'inscrire", "Se connecter"])
         
         if action == "S'inscrire":
-            st.subheader("Enregistrer un nouvel établissement / service")
+            st.subheader("Enregistrer votre établissement")
             with st.form("form_inscription"):
                 nom = st.text_input("Nom de l'entreprise ou de l'artisan")
-                metier = st.text_input("Métier / Service (ex: Plombier, Menuisier...)")
+                metier = st.text_input("Métier / Service (ex: Plombier...)")
                 commune = st.selectbox("Commune", communes_liste[1:])
-                description = st.text_area("Description de vos services")
-                badge = st.text_input("Badge (ex: Vérifié, Professionnel...)")
-                appel_url = st.text_input("Lien d'appel (ex: tel:+225...)")
-                whatsapp_url = st.text_input("Lien WhatsApp (ex: https://wa.me/225...)")
-                password = st.text_input("Mot de passe pour gérer votre espace", type="password")
+                description = st.text_area("Description")
+                badge = st.text_input("Badge (ex: Vérifié)")
+                appel_url = st.text_input("Lien d'appel (tel:+225...)")
+                whatsapp_url = st.text_input("Lien WhatsApp (https://wa.me/...)")
+                password = st.text_input("Mot de passe", type="password")
                 
-                submit_artisan = st.form_submit_button("Valider l'enregistrement")
-                
-                if submit_artisan:
+                if st.form_submit_button("Valider l'enregistrement"):
                     if nom and metier and password:
                         database.ajouter_artisan(nom, metier, commune, description, badge, appel_url, whatsapp_url, password)
-                        st.success("Établissement enregistré avec succès dans le cloud !")
+                        st.success("Établissement enregistré avec succès !")
                     else:
-                        st.error("Veuillez remplir au moins le nom, le métier et le mot de passe.")
+                        st.error("Remplissez au moins le nom, le métier et le mot de passe.")
 
         elif action == "Se connecter":
             st.subheader("Connexion Prestataire")
@@ -361,7 +355,7 @@ elif choix == "🛠️ Espace Prestataire":
                 else:
                     st.error("Nom ou mot de passe incorrect.")
 
-elif choix == "👑 Administration":
+elif menu_choix == "👑 Espace Administrateur":
     st.header("👑 Panneau de Contrôle Administrateur")
     
     admin_pwd = st.text_input("Mot de passe administrateur", type="password")
@@ -378,26 +372,24 @@ elif choix == "👑 Administration":
         col3.metric("Messages envoyés", nb_messages)
         
         st.markdown("---")
-        
         st.subheader("🏥 Gérer les Pharmacies de Garde")
         with st.form("form_ajout_pharma"):
-            p_nom = st.text_input("Nom de la pharmacie (ex: Pharmacie des Lagunes)")
+            p_nom = st.text_input("Nom de la pharmacie")
             p_commune = st.selectbox("Commune", communes_liste[1:])
-            p_contact = st.text_input("Contact (ex: +225...)")
+            p_contact = st.text_input("Contact (+225...)")
             p_loc = st.text_input("Localisation précise")
             
             if st.form_submit_button("Ajouter cette pharmacie"):
                 database.ajouter_pharmacie(p_nom, p_commune, p_contact, p_loc)
-                st.success(f"Pharmacie {p_nom} ajoutée avec succès !")
+                st.success(f"Pharmacie {p_nom} ajoutée !")
                 st.rerun()
                 
-        if st.button("🗑️ Vider la liste des pharmacies (Nouvelle semaine)"):
+        if st.button("🗑️ Vider la liste des pharmacies"):
             database.vider_pharmacies()
-            st.success("Liste des pharmacies vidée.")
+            st.success("Liste vidée.")
             st.rerun()
         
         st.markdown("---")
-        
         st.subheader("🛠️ Gérer les prestataires")
         tous_les_artisans = database.obtenir_tous_les_artisans_admin()
         
@@ -413,7 +405,7 @@ elif choix == "👑 Administration":
                             st.rerun()
                 st.divider()
         else:
-            st.info("Aucun prestataire inscrit pour le moment.")
+            st.info("Aucun prestataire inscrit.")
             
     elif admin_pwd != "":
         st.error("Mot de passe incorrect.")
