@@ -46,7 +46,7 @@ st.markdown('<div class="sous-titre">Connectez-vous aux artisans et prestataires
 menu = [
     "🔍 Accueil / Recherche", 
     "🏥 Pharmacies de Garde", 
-    "🌐 Pass Internet & Offres Perso", 
+    "🌐 Pass Internet & Achat Wave", 
     "🛠️ Espace Prestataire", 
     "👑 Espace Administrateur"
 ]
@@ -174,129 +174,74 @@ elif choix == "🏥 Pharmacies de Garde":
     else:
         st.info("Aucune pharmacie de garde enregistrée pour cette commune actuellement.")
 
-elif choix == "🌐 Pass Internet & Offres Perso":
-    st.header("🌐 Catalogue & Bons Plans / Offres Perso (Côte d'Ivoire)")
-    st.write("Retrouvez les forfaits officiels mais surtout les codes et astuces pour dénicher les offres personnalisées les plus rentables !")
+elif choix == "🌐 Pass Internet & Achat Wave":
+    st.header("🌐 Commande de Pass Internet & Paiement Wave")
+    st.write("Choisissez votre opérateur, sélectionnez votre pass, entrez votre numéro et procédez au paiement instantané via Wave.")
     
-    operateur = st.selectbox("Sélectionnez l'opérateur :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
+    operateur = st.selectbox("1. Choisissez l'opérateur :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
     
-    if operateur == "Orange Côte d'Ivoire":
-        st.subheader("🟠 Orange CI - Catalogue & Offres Perso")
-        st.info("Code USSD universel : **#111#** ou application **Max It**")
+    # Dictionnaire des offres disponibles pour le tunnel d'achat
+    offres_par_operateur = {
+        "Orange Côte d'Ivoire": {
+            "Pass 1 Heure (100F - 100 Mo)": 100,
+            "Pass Nuit (250F - 2 Go)": 250,
+            "Pass 24H (200F - 220 Mo)": 200,
+            "Pass 24H (500F - 750 Mo)": 500,
+            "Pass Semaine (1 000F - 1.5 Go)": 1000,
+            "Pass Mois (5 000F - 7.2 Go)": 5000,
+            "Pass Mois (10 000F - 15 Go)": 10000
+        },
+        "MTN Côte d'Ivoire": {
+            "Pass 1 Heure (100F - 120 Mo)": 100,
+            "Pass Nuit (150F - 500 Mo)": 150,
+            "Pass Jour (300F - 400 Mo)": 300,
+            "Pass Semaine (1 000F - 1.5 Go)": 1000,
+            "Pass Mois (2 500F - 5 Go)": 2500,
+            "Pass Mois (5 000F - 10 Go)": 5000,
+            "Pass Mois (10 000F - 25 Go)": 10000
+        },
+        "Moov Africa CI": {
+            "Pass Heure (100F - 150 Mo)": 100,
+            "Pass Nuit (200F - 2 Go)": 200,
+            "Pass Weekend (500F - 2.5 Go)": 500,
+            "Pass Semaine (750F - 1 Go)": 750,
+            "Pass Mois (5 000F - 7 Go)": 5000,
+            "Pass Mois (10 000F - 20 Go)": 10000
+        }
+    }
+    
+    st.markdown("---")
+    st.subheader("2. Sélectionnez votre Pass")
+    pass_choisi = st.selectbox("Catalogue des offres :", list(offres_par_operateur[operateur].keys()))
+    montant = offres_par_operateur[operateur][pass_choisi]
+    
+    st.markdown(f"💰 **Montant à payer :** `{montant} FCFA`")
+    
+    st.markdown("---")
+    st.subheader("3. Informations de réception & Paiement")
+    
+    with st.form("form_achat_pass"):
+        numero_client = st.text_input("Votre numéro de téléphone à recharger (ex: 07XXXXXXXX / 05XXXXXXXX / 01XXXXXXXX)")
+        email_client = st.text_input("Votre email ou pseudo (pour le suivi)")
         
-        tab_o0, tab_o1, tab_o2, tab_o3, tab_o4 = st.tabs(["🔥 Offres Perso & Bons Plans", "⚡ Pass Heure & Nuit", "📅 Pass Jour", "📆 Pass Semaine", "🌙 Pass Mois"])
+        submit_paiement = st.form_submit_button("💳 Payer avec Wave & Activer le Pass")
         
-        with tab_o0:
-            st.warning("💡 **Ce que les ivoiriens kiffent le plus (Astuces & Offres Perso) :**")
-            st.markdown("""
-            * **Le Menu Secret Yamo / Bonus Perso :** Tapez **`#111*1#`** ou vérifiez directement sur l'application **Max It** pour voir vos bonus personnalisés (souvent 2x ou 3x plus de gigas pour le même prix selon votre historique de recharge).
-            * **Offre de Nuit Spéciale :** Le pass à **250F pour 2 Go** (valable de 21h à 07h), idéal pour les gros téléchargements.
-            * **Bonus Orange Money :** Payer ses pass via Orange Money donne souvent droit à des bonus de 50% à 100% de data offerts le vendredi ou le weekend.
-            """)
-        with tab_o1:
-            st.markdown("""
-            * **Pass 1 Heure (100F) :** 100 Mo
-            * **Pass Nuit (250F) :** 2 Go (21h - 07h)
-            * **Pass Social Heure (50F) :** Illimité WhatsApp / Facebook (1h)
-            """)
-        with tab_o2:
-            st.markdown("""
-            * **Pass 24H (100F) :** 40 Mo
-            * **Pass 24H (200F) :** 220 Mo
-            * **Pass 24H (500F) :** 750 Mo
-            * **Pass 24H (1 000F) :** 2 Go
-            """)
-        with tab_o3:
-            st.markdown("""
-            * **Pass Semaine (500F) :** 300 Mo + Réseaux sociaux
-            * **Pass Semaine (1 000F) :** 1.5 Go + WaW Muzik
-            * **Pass Semaine (2 000F) :** 3.5 Go
-            """)
-        with tab_o4:
-            st.markdown("""
-            * **Pass Mois (3 000F) :** 4 Go
-            * **Pass Mois (5 000F) :** 7.2 Go
-            * **Pass Mois (10 000F) :** 15 Go
-            * **Pass Mois (15 000F) :** 25 Go
-            """)
-
-    elif operateur == "MTN Côte d'Ivoire":
-        st.subheader("🟡 MTN CI - Catalogue & Offres Perso")
-        st.info("Code USSD universel : ***105#** ou application **MTN MoMo / MyMTN**")
-        
-        tab_m0, tab_m1, tab_m2, tab_m3, tab_m4 = st.tabs(["🔥 Offres Perso & Bons Plans", "⚡ Pass Heure & Nuit", "📅 Pass Jour", "📆 Pass Semaine", "🌙 Pass Mois"])
-        
-        with tab_m0:
-            st.warning("💡 **Ce que les ivoiriens kiffent le plus (Astuces & Offres Perso) :**")
-            st.markdown("""
-            * **Le Menu Secret MTN Awoulaba / Perso :** Tapez **`*105*4#`** ou **`*105*1#`** pour découvrir les forfaits promotionnels cachés et les bonus de recharge personnalisés.
-            * **Pass Nuit Max :** Le pass **300F pour 3 Go** (de 00h à 06h), très apprécié pour les veillées de téléchargement.
-            * **Bonus MoMo :** Acheter ses pass internet directement depuis son compte MoMo offre régulièrement des volumes doublés (Happy Hour MoMo).
-            """)
-        with tab_m1:
-            st.markdown("""
-            * **Pass 1 Heure (100F) :** 120 Mo
-            * **Pass Nuit (150F) :** 500 Mo (23h - 07h)
-            * **Pass Nuit Max (300F) :** 3 Go (00h - 06h)
-            """)
-        with tab_m2:
-            st.markdown("""
-            * **Pass Jour (150F) :** 150 Mo
-            * **Pass Jour (300F) :** 400 Mo
-            * **Pass Jour (600F) :** 1 Go
-            """)
-        with tab_m3:
-            st.markdown("""
-            * **Pass Semaine (500F) :** 600 Mo
-            * **Pass Semaine (1 000F) :** 1.5 Go
-            * **Pass Semaine (2 000F) :** 4 Go
-            """)
-        with tab_m4:
-            st.markdown("""
-            * **Pass Mois (2 500F) :** 5 Go
-            * **Pass Mois (5 000F) :** 10 Go
-            * **Pass Mois (10 000F) :** 25 Go
-            * **Pass Mois Max (25 000F) :** 75 Go
-            """)
-
-    elif operateur == "Moov Africa CI":
-        st.subheader("🔵 Moov Africa CI - Catalogue & Offres Perso")
-        st.info("Code USSD universel : ***100#** ou application **Moov Merci**")
-        
-        tab_mv0, tab_mv1, tab_mv2, tab_mv3, tab_mv4 = st.tabs(["🔥 Offres Perso & Bons Plans", "⚡ Pass Heure & Nuit", "📅 Pass Jour", "📆 Pass Semaine", "🌙 Pass Mois"])
-        
-        with tab_mv0:
-            st.warning("💡 **Ce que les ivoiriens kiffent le plus (Astuces & Offres Perso) :**")
-            st.markdown("""
-            * **Le Menu Secret Moov Flooz / Bonus :** Tapez **`*100*5#`** ou vérifiez sur l'application **Moov Merci** pour voir les méga-promos et pass personnalisés du moment.
-            * **Pass Weekend imbattable :** Le **Pass Weekend à 500F pour 2.5 Go** (valable du samedi au dimanche), le plan parfait pour les réseaux sociaux.
-            * **Super Bonus de Recharge :** Moov est connu pour ses multiplicateurs de crédit et de data lors des recharges via Flooz.
-            """)
-        with tab_mv1:
-            st.markdown("""
-            * **Pass Heure (100F) :** 150 Mo
-            * **Pass Nuit (200F) :** 2 Go (23h - 07h)
-            * **Pass Weekend (500F) :** 2.5 Go (Samedi - Dimanche)
-            """)
-        with tab_mv2:
-            st.markdown("""
-            * **Pass 2 Jours (150F) :** 150 Mo
-            * **Pass 2 Jours (300F) :** 450 Mo
-            * **Pass Jour (500F) :** 800 Mo
-            """)
-        with tab_mv3:
-            st.markdown("""
-            * **Pass Semaine (300F) :** 350 Mo
-            * **Pass Semaine (750F) :** 1 Go
-            * **Pass Semaine (1 500F) :** 3 Go
-            """)
-        with tab_mv4:
-            st.markdown("""
-            * **Pass Mois (3 000F) :** 4.5 Go
-            * **Pass Mois (5 000F) :** 7 Go
-            * **Pass Mois (10 000F) :** 20 Go
-            * **Pass Mois XXL (25 000F) :** 70 Go
-            """)
+        if submit_paiement:
+            if numero_client and len(numero_client) >= 10:
+                st.success(f"🎉 Commande enregistrée pour le numéro **{numero_client}** !")
+                st.info(f"Redirection sécurisée vers **Wave** pour le règlement de **{montant} FCFA**...")
+                
+                # Lien de paiement Wave (Ici simulation ou lien Wave Me officiel)
+                # Remplace par ton lien de paiement marchand Wave personnel ou professionnel
+                lien_wave = f"https://pay.wave.com/m/M_CI_xxxxxxxxxxxx?amount={montant}&lock_amount=true"
+                
+                st.markdown(f"""
+                ### 📲 Étape finale :
+                Clique sur le bouton ci-dessous pour valider ton paiement de **{montant} FCFA** sur ton application Wave. Dès validation, ton pass sera envoyé instantanément sur le **{numero_client}** !
+                """)
+                st.link_button("👉 Ouvrir Wave pour payer", "https://pay.wave.com/")
+            else:
+                st.error("Veuillez entrer un numéro de téléphone valide (10 chiffres).")
 
 elif choix == "🛠️ Espace Prestataire":
     st.header("🛠️ Espace Prestataire")
