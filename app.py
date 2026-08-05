@@ -3,7 +3,11 @@ import pandas as pd
 import base64
 import database
 
-database.init_db()
+# Initialisation sécurisée de la base de données
+try:
+    database.init_db()
+except Exception as e:
+    st.error(f"Erreur de démarrage de la base de données : {e}")
 
 st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="centered")
 
@@ -18,19 +22,6 @@ st.markdown("""
         border-radius: 8px;
         border: none;
         font-weight: bold;
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        background-color: #E67E22;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
-        transform: scale(1.02);
-    }
-    .streamlit-expanderHeader {
-        background-color: #F8F9FA;
-        border-radius: 8px;
-        border: 1px solid #E0E0E0;
-        font-weight: bold;
-        font-size: 16px;
     }
     .titre-djassa {
         text-align: center;
@@ -51,7 +42,6 @@ st.markdown("""
 st.markdown('<div class="titre-djassa">🇨🇮 DJASSA</div>', unsafe_allow_html=True)
 st.markdown('<div class="sous-titre">Connectez-vous aux artisans et prestataires en Côte d\'Ivoire</div>', unsafe_allow_html=True)
 
-# --- NOUVEAU MENU ---
 menu = ["Accueil / Recherche", "Pharmacies de Garde", "Espace Prestataire (Inscription / Connexion)", "Espace Administrateur"]
 choix = st.sidebar.selectbox("Navigation", menu)
 
@@ -155,7 +145,6 @@ if choix == "Accueil / Recherche":
                         st.success("Avis ajouté avec succès !")
                         st.rerun()
 
-# --- NOUVEL ONGLET PHARMACIES ---
 elif choix == "Pharmacies de Garde":
     st.header("🏥 Pharmacies de Garde")
     st.write("Trouvez rapidement les pharmacies ouvertes pour les urgences cette semaine.")
@@ -279,7 +268,6 @@ elif choix == "Espace Administrateur":
         
         st.markdown("---")
         
-        # --- GESTION DES PHARMACIES PAR L'ADMIN ---
         st.subheader("🏥 Gérer les Pharmacies de Garde")
         with st.form("form_ajout_pharma"):
             p_nom = st.text_input("Nom de la pharmacie (ex: Pharmacie des Lagunes)")
