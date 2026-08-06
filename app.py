@@ -1,369 +1,154 @@
 import streamlit as st
-import pandas as pd
-import base64
 import database
+import requests
+import os
 
-# Initialisation sécurisée de la base de données
+# ==========================================
+# 1. INITIALISATION DE LA BASE DE DONNÉES
+# ==========================================
 try:
+    # On lance l'initialisation dès le démarrage
     database.init_db()
 except Exception as e:
-    st.error(f"Erreur de démarrage de la base de données : {e}")
+    st.error(f"Erreur d'initialisation de la base de données : {e}")
 
-st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="centered")
+# ==========================================
+# 2. FONCTION DE PAIEMENT FEDAPAY
+# ==========================================
+def initialiser_paiement_fedapay(montant, description, nom_client, email_client):
+    try:
+        secret_key = st.secrets.get("FEDAPAY_SECRET_KEY") or os.getenv("FEDAPAY_SECRET_KEY")
+    except Exception:
+        secret_key = None
 
-# --- DESIGN SIMPLE ET ÉPURÉ (ANCIEN STYLE) ---
-st.markdown("""
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    .titre-djassa {
-        text-align: center;
-        color: #FF7A00;
-        font-size: 38px;
-        font-weight: 900;
-        margin-bottom: 5px;
+    if not secret_key:
+        st.error("Clé FEDAPAY_SECRET_KEY introuvable dans secrets.toml")
+        return None
+
+    # Détection automatique du mode Live ou Sandbox
+    is_sandbox = secret_key.startswith("sk_sandbox") or "sandbox" in secret_key
+    base_url = "https://sandbox-api.fedapay.com" if is_sandbox else "https://api.fedapay.com"
+
+    url_transaction = f"{base_url}/v1/transactions"
+    headers = {
+        "Authorization": f"Bearer {secret_key}",
+        "Content-Type": "application/json"
     }
-    .sous-titre {
-        text-align: center;
-        color: #A0A0A0;
-        font-size: 16px;
-        margin-bottom: 25px;
+    payload = {
+        "description": description,
+        "amount": int(montant),
+        "currency": {"iso": "XOF"},
+        "customer": {"firstname": nom_client, "email": email_client}
     }
-    .stButton>button {
-        background-color: #FF7A00;
-        color: white !important;
-        border-radius: 8px;
-        border: none;
-        font-weight: bold;
-    }
-    </style>
-""", unsafe_allow_html=True)
 
-st.markdown('<div class="titre-djassa">🇨🇮 DJASSA</div>', unsafe_allow_html=True)
-st.markdown('<div class="sous-titre">Connectez-vous aux artisans, pharmacies et services en Côte d\'Ivoire</div>', unsafe_allow_html=True)
-
-# --- NAVIGATION PRINCIPALE CLASSIQUE ---
-menu = [
-    "🔍 Accueil / Recherche", 
-    "🏥 Pharmacies de Garde", 
-    "🌐 Pass Internet & Wave", 
-    "🛠️ Espace Prestataire", 
-    "👑 Espace Administrateur"
-]
-
-choix = st.radio("Navigation principale :", menu, horizontal=True)
-st.markdown("---")
-
-communes_liste = ["Toutes les communes", "Cocody", "Yopougon", "Plateau", "Marcory", "Adjamé", "Treichville", "Riviera", "Koumassi", "Port-Bouët", "Abobo", "Bingerville"]
-
-if choix == "🔍 Accueil / Recherche":
-    st.header("🔍 Rechercher un service ou un artisan")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        recherche_nom = st.text_input("Nom de l'artisan / entreprise")
-    with col2:
-        commune_filtre = st.selectbox("Commune", communes_liste)
-    with col3:
-        metiers_dispo = ["Tous les services", "Plombier", "Menuisier", "Électricien", "Maçon", "Peintre", "Climatisation", "Mécanicien", "Couturier"]
-        metier_filtre = st.selectbox("Service / Métier", metiers_dispo)
-    
-    query_finale = recherche_nom
-    if metier_filtre != "Tous les services":
-        query_finale = f"{recherche_nom} {metier_filtre}".strip()
-
-    artisans = database.rechercher_artisans_intelligent(query=query_finale, commune_filtre=commune_filtre)
-    
-    if not artisans:
-        st.info("Aucun artisan trouvé avec ces critères.")
-    else:
-        st.success(f"{len(artisans)} artisan(s) trouvé(s)")
-        
-        st.subheader("🗺️ Carte des artisans")
-        df_map = pd.DataFrame([{"lat": a["lat"], "lon": a["lon"]} for a in artisans if a.get("lat") and a.get("lon")])
-        if not df_map.empty:
-            st.map(df_map, zoom=11)
-        st.markdown("---")
-
-        for art in artisans:
-            moyenne, nb_avis = database.obtenir_note_moyenne(art['id'])
-            etoiles_affichage = f"⭐ {moyenne}/5 ({nb_avis} avis)" if nb_avis > 0 else "⭐ Nouveau"
-
-            with st.expander(f"{art['nom']} - {art['metier']} ({art['commune']}) | {etoiles_affichage}"):
-                st.write(f"**Description :** {art['description']}")
-                st.write(f"**Badge :** {art['badge']}")
-                
-                c_appel, c_wa = st.columns(2)
-                with c_appel:
-                    if art['appel_url']:
-                        st.link_button("📞 Appeler", art['appel_url'])
-                with c_wa:
-                    if art['whatsapp_url']:
-                        st.link_button("💬 WhatsApp", art['whatsapp_url'])
-                
-                st.markdown("---")
-                
-                portfolio_images = database.obtenir_portfolio(art['id'])
-                if portfolio_images:
-                    st.subheader("📸 Portfolio & Réalisations")
-                    cols = st.columns(3)
-                    for i, img_data in enumerate(portfolio_images):
-                        with cols[i % 3]:
-                            st.image(f"data:image/png;base64,{img_data['image_b64']}", caption=img_data['description'], use_container_width=True)
-                    st.markdown("---")
-
-                st.subheader("💬 Discuter en direct avec l'artisan")
-                messages = database.obtenir_messages(art['id'])
-                
-                chat_container = st.container(height=200)
-                with chat_container:
-                    if messages:
-                        for msg in messages:
-                            st.write(f"**{msg['expediteur']}** : {msg['contenu']}")
-                    else:
-                        st.caption("Aucun message pour l'instant. Envoyez le premier !")
-                
-                with st.form(f"form_chat_{art['id']}", clear_on_submit=True):
-                    nom_expediteur = st.text_input("Votre nom / pseudo", key=f"exp_{art['id']}")
-                    texte_message = st.text_input("Votre message", key=f"txt_{art['id']}")
-                    send_msg = st.form_submit_button("Envoyer le message")
-                    if send_msg:
-                        if nom_expediteur and texte_message:
-                            database.envoyer_message(art['id'], nom_expediteur, texte_message)
-                            st.success("Message envoyé !")
-                            st.rerun()
-                        else:
-                            st.warning("Veuillez remplir votre nom et votre message.")
-
-                st.markdown("---")
-                st.subheader(f"⭐ Avis clients ({moyenne}/5 sur {nb_avis} avis)")
-                avis_list = database.obtenir_avis(art['id'])
-                if avis_list:
-                    for av in avis_list:
-                        st.write(f"⭐ **{av['note']}/5** : {av['commentaire']}")
-                else:
-                    st.write("Pas encore d'avis.")
-                    
-                with st.form(f"form_avis_{art['id']}"):
-                    note = st.slider("Note", 1, 5, 5, key=f"slider_{art['id']}")
-                    commentaire = st.text_area("Votre commentaire", key=f"comm_{art['id']}")
-                    submit_avis = st.form_submit_button("Laisser un avis")
-                    if submit_avis:
-                        database.ajouter_avis(art['id'], note, commentaire)
-                        st.success("Avis ajouté avec succès !")
-                        st.rerun()
-
-elif choix == "🏥 Pharmacies de Garde":
-    st.header("🏥 Pharmacies de Garde")
-    st.write("Trouvez rapidement les pharmacies ouvertes pour les urgences cette semaine.")
-    
-    commune_pharma = st.selectbox("Sélectionnez votre commune :", communes_liste)
-    pharmacies_trouvees = database.obtenir_pharmacies(commune_filtre=commune_pharma)
-    
-    if pharmacies_trouvees:
-        for ph in pharmacies_trouvees:
-            with st.container():
-                st.subheader(f"💊 {ph['nom']}")
-                st.write(f"📍 **Commune :** {ph['commune']}")
-                st.write(f"🗺️ **Localisation :** {ph['localisation']}")
-                if ph['contact']:
-                    st.link_button("📞 Appeler la pharmacie", f"tel:{ph['contact']}")
-                st.divider()
-    else:
-        st.info("Aucune pharmacie de garde enregistrée pour cette commune actuellement.")
-
-elif choix == "🌐 Pass Internet & Wave":
-    st.header("🌐 Commande de Pass Internet & Paiement Wave")
-    st.write("Choisissez votre opérateur, sélectionnez votre pass, entrez votre numéro et procédez au paiement instantané via Wave.")
-    
-    operateur = st.selectbox("1. Choisissez l'opérateur :", ["Orange Côte d'Ivoire", "MTN Côte d'Ivoire", "Moov Africa CI"])
-    
-    offres_par_operateur = {
-        "Orange Côte d'Ivoire": {
-            "🔥 [Offre Perso] Pass Bonus Yamo (200F - 220 Mo)": 200,
-            "⚡ Pass Nuit (250F - 2 Go)": 250,
-            "📅 Pass 24H (500F - 750 Mo)": 500,
-            "📆 Pass Semaine (1 000F - 1.5 Go)": 1000,
-            "🌙 Pass Mois (5 000F - 7.2 Go)": 5000,
-            "🌙 Pass Mois (10 000F - 15 Go)": 10000
-        },
-        "MTN Côte d'Ivoire": {
-            "🔥 [Offre Perso] Pass Awoulaba (150F - 150 Mo)": 150,
-            "⚡ Pass Nuit Max (300F - 3 Go)": 300,
-            "📅 Pass Jour (300F - 400 Mo)": 300,
-            "📆 Pass Semaine (1 000F - 1.5 Go)": 1000,
-            "🌙 Pass Mois (2 500F - 5 Go)": 2500,
-            "🌙 Pass Mois (10 000F - 25 Go)": 10000
-        },
-        "Moov Africa CI": {
-            "🔥 [Offre Perso] Pass Flooz Bonus (150F - 150 Mo)": 150,
-            "⚡ Pass Nuit (200F - 2 Go)": 200,
-            "📅 Pass Weekend (500F - 2.5 Go)": 500,
-            "📆 Pass Semaine (750F - 1 Go)": 750,
-            "🌙 Pass Mois (5 000F - 7 Go)": 5000,
-            "🌙 Pass Mois (10 000F - 20 Go)": 10000
-        }
-    }
-    
-    st.markdown("---")
-    st.subheader("2. Sélectionnez votre Pass")
-    pass_choisi = st.selectbox("Catalogue des offres :", list(offres_par_operateur[operateur].keys()))
-    montant = offres_par_operateur[operateur][pass_choisi]
-    
-    st.markdown(f"💰 **Montant à payer :** `{montant} FCFA`")
-    
-    st.markdown("---")
-    st.subheader("3. Informations de réception & Paiement")
-    
-    with st.form("form_achat_pass"):
-        numero_client = st.text_input("Votre numéro de téléphone (ex: 07 / 05 / 01...)")
-        
-        submit_paiement = st.form_submit_button("💳 Payer avec Wave & Activer le Pass")
-        
-        if submit_paiement:
-            if numero_client and len(numero_client) >= 10:
-                st.success(f"🎉 Commande enregistrée pour le numéro **{numero_client}** !")
-                st.info(f"Redirection vers **Wave** pour le règlement de **{montant} FCFA**...")
-                st.link_button("👉 Ouvrir Wave pour payer", "https://pay.wave.com/")
-            else:
-                st.error("Veuillez entrer un numéro de téléphone valide (10 chiffres).")
-
-elif choix == "🛠️ Espace Prestataire":
-    st.header("🛠️ Espace Prestataire")
-    
-    if 'artisan_id' in st.session_state:
-        st.success(f"🟢 Connecté en tant que : **{st.session_state['artisan_nom']}**")
-        
-        if st.button("🚪 Se déconnecter"):
-            del st.session_state['artisan_id']
-            del st.session_state['artisan_nom']
-            st.rerun()
-            
-        st.markdown("---")
-        st.subheader("📸 Ajouter une réalisation au Portfolio")
-        uploaded_file = st.file_uploader("Choisissez une image de votre travail", type=["png", "jpg", "jpeg"])
-        desc_image = st.text_input("Petite description de l'image")
-        
-        if st.button("Ajouter l'image"):
-            if uploaded_file is not None:
-                bytes_data = uploaded_file.getvalue()
-                image_b64 = base64.b64encode(bytes_data).decode()
-                database.ajouter_image_portfolio(st.session_state['artisan_id'], image_b64, desc_image)
-                st.success("Image ajoutée à votre profil.")
-                st.rerun()
-            else:
-                st.warning("Veuillez sélectionner une image.")
-        
-        st.markdown("---")
-        st.subheader("📬 Vos Messages Reçus")
-        messages_recus = database.obtenir_messages(st.session_state['artisan_id'])
-        if messages_recus:
-            for msg in reversed(messages_recus):
-                date_str = msg['date_envoi'].strftime('%d/%m/%Y à %H:%M')
-                st.info(f"**De {msg['expediteur']}** ({date_str}) :\n\n{msg['contenu']}")
+    try:
+        response = requests.post(url_transaction, json=payload, headers=headers, timeout=10)
+        data = response.json()
+        if response.status_code in [200, 201]:
+            trans_data = data.get("v1/transaction") or data.get("transaction") or data
+            trans_id = trans_data.get("id")
+            token_url = f"{base_url}/v1/transactions/{trans_id}/token"
+            token_response = requests.post(token_url, headers=headers, timeout=10)
+            return token_response.json().get("url")
         else:
-            st.write("Aucun message reçu pour le moment.")
-            
-        st.markdown("---")
-        st.subheader("⭐ Vos Avis Clients")
-        avis_recus = database.obtenir_avis(st.session_state['artisan_id'])
-        if avis_recus:
-            for av in avis_recus:
-                st.write(f"⭐ **{av['note']}/5** : {av['commentaire']}")
-        else:
-            st.write("Aucun avis reçu.")
-            
-    else:
-        action = st.radio("Que souhaitez-vous faire ?", ["S'inscrire", "Se connecter"])
-        
-        if action == "S'inscrire":
-            st.subheader("Enregistrer un nouvel établissement / service")
-            with st.form("form_inscription"):
-                nom = st.text_input("Nom de l'entreprise ou de l'artisan")
-                metier = st.text_input("Métier / Service (ex: Plombier...)")
-                commune = st.selectbox("Commune", communes_liste[1:])
-                description = st.text_area("Description de vos services")
-                badge = st.text_input("Badge (ex: Vérifié)")
-                appel_url = st.text_input("Lien d'appel (tel:+225...)")
-                whatsapp_url = st.text_input("Lien WhatsApp (https://wa.me/...)")
-                password = st.text_input("Mot de passe pour gérer votre espace", type="password")
-                
-                submit_artisan = st.form_submit_button("Valider l'enregistrement")
-                
-                if submit_artisan:
-                    if nom and metier and password:
-                        database.ajouter_artisan(nom, metier, commune, description, badge, appel_url, whatsapp_url, password)
-                        st.success("Établissement enregistré avec succès !")
-                    else:
-                        st.error("Remplissez au moins le nom, le métier et le mot de passe.")
+            st.error(f"Erreur FedaPay : {data.get('message', 'Erreur de génération')}")
+            return None
+    except Exception as e:
+        st.error(f"Erreur réseau : {e}")
+        return None
 
-        elif action == "Se connecter":
-            st.subheader("Connexion Prestataire")
-            nom_connexion = st.text_input("Votre nom d'artisan / entreprise")
-            pwd_connexion = st.text_input("Votre mot de passe", type="password")
-            
-            if st.button("Se connecter"):
-                artisan_verif = database.verifier_connexion_artisan(nom_connexion, pwd_connexion)
-                if artisan_verif:
-                    st.session_state['artisan_id'] = artisan_verif[0]
-                    st.session_state['artisan_nom'] = artisan_verif[1]
-                    st.rerun()
-                else:
-                    st.error("Nom ou mot de passe incorrect.")
 
-elif choix == "👑 Espace Administrateur":
-    st.header("👑 Panneau de Contrôle Administrateur")
-    
-    admin_pwd = st.text_input("Mot de passe administrateur", type="password")
-    
-    if admin_pwd == "djassa_admin_2026":
-        st.success("Accès autorisé. Bienvenue boss !")
+# ==========================================
+# 3. INTERFACE UTILISATEUR (DJASSA)
+# ==========================================
+def main():
+    # Configuration de la page
+    st.set_page_config(page_title="DJASSA", page_icon="🇨🇮", layout="wide")
+
+    # En-tête
+    st.markdown("<h1 style='text-align: center; color: #ff6600;'>🇨🇮 DJASSA</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>Connectez-vous aux artisans, pharmacies et services en Côte d'Ivoire</p>", unsafe_allow_html=True)
+    st.divider()
+
+    # Menu de navigation
+    st.write("**Navigation principale :**")
+    menu = st.radio(
+        "",
+        ["🔍 Accueil / Recherche", "🏥 Pharmacies de Garde", "🌐 Passer Internet & Wave", "🛠️ Espace Prestataire", "👑 Espace Administrateur"],
+        horizontal=True
+    )
+    st.divider()
+
+    # SECTION : ACCUEIL / RECHERCHE
+    if menu == "🔍 Accueil / Recherche":
+        st.title("🔍 Rechercher un service ou un artisan")
         
-        st.subheader("📊 Statistiques de la plateforme")
-        nb_artisans, nb_avis, nb_messages = database.obtenir_toutes_les_stats()
-        
+        # Filtres de recherche
         col1, col2, col3 = st.columns(3)
-        col1.metric("Prestataires inscrits", nb_artisans)
-        col2.metric("Avis publiés", nb_avis)
-        col3.metric("Messages envoyés", nb_messages)
-        
-        st.markdown("---")
-        st.subheader("🏥 Gérer les Pharmacies de Garde")
-        with st.form("form_ajout_pharma"):
-            p_nom = st.text_input("Nom de la pharmacie")
-            p_commune = st.selectbox("Commune", communes_liste[1:])
-            p_contact = st.text_input("Contact (+225...)")
-            p_loc = st.text_input("Localisation précise")
+        with col1:
+            query_finale = st.text_input("Nom de l'artisan / entreprise", placeholder="Ex: Kouassi...")
+        with col2:
+            commune = st.selectbox("Commune", ["Toutes les communes", "Cocody", "Yopougon", "Abobo", "Marcory", "Plateau"])
+        with col3:
+            service = st.selectbox("Service / Métier", ["Tous les services", "Plomberie", "Menuiserie", "Mécanique", "Électricité"])
+
+        # Bouton pour lancer la recherche
+        if st.button("Lancer la recherche", type="primary", use_container_width=True):
+            # On mémorise dans st.session_state que la recherche a été activée
+            st.session_state["recherche_lancee"] = True
+            st.session_state["q_finale"] = query_finale
+            st.session_state["q_commune"] = commune
+            st.session_state["q_service"] = service
+
+        # On affiche les résultats SEULEMENT si la recherche a été lancée au moins une fois
+        if st.session_state.get("recherche_lancee"):
+            artisans = database.rechercher_artisans_intelligent(
+                st.session_state["q_finale"], 
+                st.session_state["q_commune"], 
+                st.session_state["q_service"]
+            )
             
-            if st.form_submit_button("Ajouter cette pharmacie"):
-                database.ajouter_pharmacie(p_nom, p_commune, p_contact, p_loc)
-                st.success(f"Pharmacie {p_nom} ajoutée !")
-                st.rerun()
-                
-        if st.button("🗑️ Vider la liste des pharmacies"):
-            database.vider_pharmacies()
-            st.success("Liste vidée.")
-            st.rerun()
-        
-        st.markdown("---")
-        st.subheader("🛠️ Gérer les prestataires")
-        tous_les_artisans = database.obtenir_tous_les_artisans_admin()
-        
-        if tous_les_artisans:
-            for art in tous_les_artisans:
-                with st.container():
-                    col_nom, col_btn = st.columns([3, 1])
-                    with col_nom:
-                        st.write(f"**{art['nom']}** - {art['metier']} ({art['commune']})")
-                    with col_btn:
-                        if st.button("❌ Supprimer", key=f"del_{art['id']}"):
-                            database.supprimer_artisan(art['id'])
-                            st.rerun()
-                st.divider()
-        else:
-            st.info("Aucun prestataire inscrit.")
-            
-    elif admin_pwd != "":
-        st.error("Mot de passe incorrect.")
+            if artisans:
+                st.success(f"{len(artisans)} artisan(s) trouvé(s) !")
+                for art in artisans:
+                    with st.expander(f"🛠️ {art['nom']} - {art['service']}"):
+                        st.write(f"📍 **Commune :** {art['commune']}")
+                        st.write(f"📞 **Téléphone :** {art['telephone']}")
+                        st.write(f"📝 **Description :** {art['description']}")
+                        
+                        cle_url = f"url_pay_{art['id']}"
+                        
+                        # Bouton qui génère le paiement
+                        if st.button(f"Payer un acompte à {art['nom']} (1000 FCFA)", key=f"btn_gen_{art['id']}"):
+                            with st.spinner("Génération du guichet de paiement FedaPay..."):
+                                url_paiement = initialiser_paiement_fedapay(
+                                    montant=1000, 
+                                    description=f"Acompte reservation {art['nom']}", 
+                                    nom_client="Client Test", 
+                                    email_client="contact@djassa.ci"
+                                )
+                                if url_paiement:
+                                    # On stocke l'URL de paiement générée dans le state
+                                    st.session_state[cle_url] = url_paiement
+                                else:
+                                    st.error("Échec de la génération du lien. Vérifie ta clé Sandbox.")
+                        
+                        # Affichage du bouton de redirection vers FedaPay si le lien a été généré
+                        if cle_url in st.session_state:
+                            st.success("Lien de paiement généré avec succès !")
+                            st.link_button(
+                                "💳 Accéder au guichet de paiement (FedaPay)", 
+                                st.session_state[cle_url],
+                                use_container_width=True
+                            )
+            else:
+                st.warning("Aucun artisan ne correspond à vos critères de recherche.")
+
+    # AUTRES SECTIONS
+    elif menu == "🛠️ Espace Prestataire":
+        st.info("Cette section permettra aux artisans de s'inscrire et gérer leur profil.")
+    else:
+        st.info("Cette section est en cours de développement.")
+
+if __name__ == "__main__":
+    main()
